@@ -1,0 +1,92 @@
+:root {
+  /* -------------------------------------------------------------
+     EMC brand palette
+  ------------------------------------------------------------- */
+  --color-primary: #7ab41b;
+  --color-primary-dark: #659616;
+  --color-primary-darker: #4c730d;
+  --color-primary-deep: #38570a;
+  --color-primary-light: #eef5e5;
+  --color-primary-soft: var(--color-primary-light);
+  --color-primary-softer: #f7faf2;
+  --color-primary-tint: #e3f0cf;
+  --color-primary-line: #d5e5c0;
+
+  --color-secondary: #ff9412;
+  --color-secondary-dark: #e5810a;
+  --color-secondary-deep: #b96706;
+  --color-secondary-light: #fff2e2;
+  --color-secondary-soft: var(--color-secondary-light);
+  --color-secondary-tint: #ffe5c4;
+
+  /* -------------------------------------------------------------
+     Neutrals — warm, calm and enterprise-friendly
+  ------------------------------------------------------------- */
+  --color-text: #171717;
+  --color-text-strong: #101010;
+  --color-text-muted: #74796f;
+  --color-text-subtle: #94998f;
+  --color-background: #f5f7f2;
+  --color-page: var(--color-background);
+  --color-page-deep: #edf1e7;
+  --color-white: #ffffff;
+  --color-surface: var(--color-white);
+  --color-surface-muted: #f8faf5;
+  --color-surface-sunken: #f1f4ec;
+  --color-table-head: #f6f9f2;
+  --color-border: #e6ebdd;
+  --color-border-strong: #d4dbc9;
+  --color-border-subtle: #eef2e8;
+
+  /* -------------------------------------------------------------
+     Semantic states — kept within the Ecometrix palette
+  ------------------------------------------------------------- */
+  --color-danger: #c9342b;
+  --color-danger-dark: #a92720;
+  --color-danger-soft: #fdeceb;
+  --color-success: #2f7d32;
+  --color-success-dark: #256428;
+  --color-success-soft: #e9f5e8;
+  --color-info: var(--color-primary-dark);
+  --color-info-dark: var(--color-primary-darker);
+  --color-info-soft: var(--color-primary-light);
+  --color-warning: #a85a08;
+  --color-warning-soft: var(--color-secondary-light);
+
+  /* -------------------------------------------------------------
+     Shape + elevation
+  ------------------------------------------------------------- */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  --shadow-xs: 0 1px 2px rgba(23, 23, 23, 0.04);
+  --shadow-card: 0 2px 10px rgba(23, 23, 23, 0.04);
+  --shadow-sm: 0 2px 10px rgba(23, 23, 23, 0.04), 0 10px 22px -14px rgba(23, 23, 23, 0.12);
+  --shadow-md: 0 4px 12px rgba(23, 23, 23, 0.05), 0 18px 38px -18px rgba(23, 23, 23, 0.16);
+  --shadow-lg: 0 12px 30px rgba(23, 23, 23, 0.1), 0 40px 80px -32px rgba(23, 23, 23, 0.26);
+  --shadow-primary: 0 2px 5px rgba(122, 180, 27, 0.26), 0 10px 20px -10px rgba(122, 180, 27, 0.46);
+  --shadow-secondary: 0 2px 5px rgba(255, 148, 18, 0.24),
+    0 10px 20px -10px rgba(255, 148, 18, 0.42);
+
+  --ring-primary: 0 0 0 4px rgba(122, 180, 27, 0.14);
+  --ring-danger: 0 0 0 4px rgba(201, 52, 43, 0.12);
+
+  /* -------------------------------------------------------------
+     Layout
+  ------------------------------------------------------------- */
+  --sidebar-width: 268px;
+  --header-height: 74px;
+  --content-max: 1560px;
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --transition-fast: 140ms ease;
+  --transition-base: 220ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  --transition-slow: 360ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
