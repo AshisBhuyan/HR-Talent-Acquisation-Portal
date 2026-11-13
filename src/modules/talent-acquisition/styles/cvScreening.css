@@ -1,0 +1,230 @@
+/* ---------------------------------------------------------------
+   CV screening
+--------------------------------------------------------------- */
+
+.ta-screening-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 1.1rem;
+  align-items: start;
+}
+
+.ta-screening-layout__side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.ta-screening-layout__side .ta-panel {
+  margin-top: 0;
+}
+
+.ta-score {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  padding: 0.75rem 0.85rem;
+}
+
+.ta-score--sm {
+  padding: 0.55rem 0.7rem;
+}
+
+.ta-score__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.ta-score__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.ta-score__value {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--color-primary-darker);
+  font-variant-numeric: tabular-nums;
+}
+
+.ta-score--sm .ta-score__value {
+  font-size: 0.88rem;
+}
+
+.ta-score__track {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--color-page-deep);
+  overflow: hidden;
+}
+
+.ta-score__bar {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-primary-dark), #9ed13f);
+}
+
+.ta-skill-match {
+  padding: 0.95rem;
+}
+
+.ta-skill-match__summary {
+  margin-bottom: 0.55rem;
+}
+
+.ta-skill-match__count {
+  font-size: 0.79rem;
+  font-weight: 650;
+  color: var(--color-text);
+}
+
+.ta-skill-match__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.ta-skill-match__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.ta-skill-match__item--matched {
+  background: var(--color-success-soft);
+  border-color: #ccebcf;
+  color: var(--color-success-dark);
+}
+
+.ta-skill-match__item--missing {
+  background: var(--color-danger-soft);
+  border-color: #f3cdca;
+  color: var(--color-danger-dark);
+}
+
+.ta-skill-match__item--neutral {
+  background: var(--color-surface-sunken);
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.ta-screening-ai {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ta-screening-ai__summary {
+  font-size: 0.8rem;
+  color: var(--color-text);
+  line-height: 1.55;
+}
+
+.ta-screening-ai__missing {
+  font-size: 0.76rem;
+  color: var(--color-warning);
+}
+
+.ta-screening-ai__meta {
+  font-size: 0.72rem;
+  color: var(--color-text-subtle);
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .ta-screening-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Summary cards -------------------------------------------------- */
+.ta-screening-stats {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+@media (max-width: 1320px) {
+  .ta-screening-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .ta-screening-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Comparison table ----------------------------------------------- */
+.ta-compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.83rem;
+}
+
+.ta-compare-table thead th {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: var(--color-table-head);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ta-compare-table tbody td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.ta-compare-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Score card ------------------------------------------------------ */
+.ta-score-card {
+  border: 1px solid var(--color-primary-line);
+  border-radius: var(--radius-md);
+  background: linear-gradient(160deg, var(--color-primary-light), var(--color-primary-softer));
+  padding: 1.1rem;
+  text-align: center;
+}
+
+.ta-score-card__label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary-darker);
+}
+
+.ta-score-card__value {
+  margin: 0.35rem 0;
+  font-size: 2.6rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--color-primary-darker);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.ta-score-card__meta {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}

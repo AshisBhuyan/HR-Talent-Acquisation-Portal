@@ -1,0 +1,175 @@
+/* ---------------------------------------------------------------
+   Interviews
+--------------------------------------------------------------- */
+
+.ta-interview-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.ta-interview-summary__item {
+  padding: 0.8rem 0.95rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.ta-interview-summary__label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.ta-interview-summary__value {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--color-text-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.ta-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ta-calendar__day-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-primary-darker);
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.ta-calendar__list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ta-calendar__item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.ta-calendar__time {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--color-primary-darker);
+  min-width: 46px;
+}
+
+.ta-calendar__title {
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: var(--color-text);
+}
+
+.ta-calendar__meta {
+  font-size: 0.73rem;
+  color: var(--color-text-muted);
+}
+
+.ta-rating {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.ta-rating__option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.32rem 0.55rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+  background: var(--color-surface);
+  font-size: 0.76rem;
+  font-weight: 650;
+  color: var(--color-text-muted);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.ta-rating__option:hover {
+  color: var(--color-text);
+}
+
+.ta-rating__option.active {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary-line);
+  color: var(--color-primary-darker);
+}
+
+@media (max-width: 900px) {
+  .ta-interview-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Interview invitation email ----------------------------------- */
+.ta-invitation-send {
+  padding: 1rem 1.1rem;
+}
+
+.ta-invitation-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.9rem 1.5rem;
+}
+
+@media (max-width: 720px) {
+  .ta-invitation-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ta-email-preview {
+  padding: 1rem 1.1rem 1.1rem;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.ta-email-preview__subject {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--color-text-strong);
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-primary-softer);
+  margin-bottom: 0.6rem;
+}
+
+.ta-email-preview__body {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface-muted);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 320px;
+  overflow-y: auto;
+}

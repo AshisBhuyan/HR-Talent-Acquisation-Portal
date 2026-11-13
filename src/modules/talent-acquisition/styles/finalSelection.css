@@ -1,0 +1,16 @@
+/* ---------------------------------------------------------------
+   Final selection
+--------------------------------------------------------------- */
+
+.ta-selection-remarks {
+  max-width: 320px;
+  font-size: 0.79rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .ta-selection-remarks {
+    max-width: none;
+  }
+}

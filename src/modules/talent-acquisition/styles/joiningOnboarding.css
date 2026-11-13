@@ -1,0 +1,259 @@
+/* ---------------------------------------------------------------
+   Joining and onboarding
+--------------------------------------------------------------- */
+
+.ta-joining-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.ta-joining-progress__track {
+  flex: 1;
+  min-width: 90px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-page-deep);
+  overflow: hidden;
+}
+
+.ta-joining-progress__bar {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-primary-dark), #9ed13f);
+}
+
+.ta-handover-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-primary-line);
+  color: var(--color-primary-darker);
+  font-size: 0.81rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 720px) {
+  .ta-inline-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Joining summary cards ---------------------------------------- */
+.ta-joining-stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* Document verification ---------------------------------------- */
+.ta-document__history {
+  margin-top: 0.4rem;
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+}
+
+.ta-document__history summary {
+  cursor: pointer;
+  color: var(--color-primary-darker);
+  font-weight: 600;
+  padding: 0.15rem 0;
+}
+
+.ta-document__history .ta-timeline {
+  margin-top: 0.45rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+/* Checklist ---------------------------------------------------- */
+.ta-checklist-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.ta-checklist-progress {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.9rem;
+  background: var(--color-surface-muted);
+}
+
+.ta-checklist-progress__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.ta-checklist-progress__head strong {
+  color: var(--color-primary-darker);
+  font-variant-numeric: tabular-nums;
+}
+
+.ta-checklist-progress__meta {
+  margin-top: 0.4rem;
+  font-size: 0.74rem;
+  color: var(--color-text-muted);
+}
+
+.ta-checklist-group__title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-primary-darker);
+  margin: 0 0 0.5rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.ta-checklist__main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.ta-checklist__status-icon {
+  display: grid;
+  place-items: center;
+  color: var(--color-primary-dark);
+  flex-shrink: 0;
+}
+
+.ta-checklist__item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.ta-checklist__item-label {
+  font-size: 0.83rem;
+  font-weight: 650;
+  color: var(--color-text);
+}
+
+.ta-checklist__item-remark {
+  font-size: 0.74rem;
+  color: var(--color-text-muted);
+}
+
+.ta-checklist__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+/* Conversion / handover ---------------------------------------- */
+.ta-conversion-status {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  padding: 0.75rem 0.9rem;
+}
+
+.ta-conversion-status__label {
+  display: block;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+  margin-bottom: 0.28rem;
+}
+
+.ta-conversion-status__item span:last-child {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* Import history ----------------------------------------------- */
+.ta-import-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ta-import-history__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.ta-import-history__item:last-child {
+  border-bottom: 0;
+}
+
+.ta-import-history__title {
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: var(--color-text);
+}
+
+.ta-import-history__meta {
+  font-size: 0.73rem;
+  color: var(--color-text-muted);
+}
+
+.ta-import-history__side {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1320px) {
+  .ta-joining-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1180px) {
+  .ta-conversion-status {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .ta-joining-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ta-conversion-status {
+    grid-template-columns: 1fr;
+  }
+
+  .ta-checklist__item {
+    flex-wrap: wrap;
+  }
+
+  .ta-checklist__actions {
+    width: 100%;
+  }
+
+  .ta-import-history__item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

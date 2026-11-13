@@ -9,6 +9,22 @@ export const ROUTES = {
   employeeProfile: (employeeId) => `/hr/employee-databank/${employeeId}`,
   INVITE_PATTERN: '/employee-invite/:token',
   invite: (token) => `/employee-invite/${token}`,
+
+  /* -------------------------------------------------------------
+     Talent Acquisition module
+  ------------------------------------------------------------- */
+  TALENT_ACQUISITION: '/hr/talent-acquisition',
+  TALENT_DASHBOARD: '/hr/talent-acquisition/dashboard',
+  TALENT_APPLICATIONS: '/hr/talent-acquisition/applications',
+  TALENT_APPLICATION_PATTERN: '/hr/talent-acquisition/applications/:applicationId',
+  TALENT_SCREENING: '/hr/talent-acquisition/screening',
+  TALENT_SHORTLISTING: '/hr/talent-acquisition/shortlisting',
+  TALENT_INTERVIEWS: '/hr/talent-acquisition/interviews',
+  TALENT_FINAL_SELECTION: '/hr/talent-acquisition/final-selection',
+  TALENT_APPROVALS: '/hr/talent-acquisition/approvals',
+  TALENT_OFFERS: '/hr/talent-acquisition/offers',
+  TALENT_JOINING: '/hr/talent-acquisition/joining',
+  TALENT_REPORTS: '/hr/talent-acquisition/reports',
 };
 
 export const DATABANK_TABS = [

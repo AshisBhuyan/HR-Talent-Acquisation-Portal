@@ -2,6 +2,7 @@ import { createBrowserRouter, Link, Navigate } from 'react-router-dom';
 import MainLayout from '../shared/layout/MainLayout.jsx';
 import EmployeeOnboardingPage from '../modules/employee-databank/pages/EmployeeOnboardingPage.jsx';
 import { employeeDatabankRoutes } from '../modules/employee-databank/routes/employeeDatabankRoutes.jsx';
+import { talentAcquisitionRoutes } from '../modules/talent-acquisition/routes/talentAcquisitionRoutes.jsx';
 import { ROUTES } from './routeConfig.js';
 
 function NotFoundPage() {
@@ -34,7 +35,7 @@ export const router = createBrowserRouter([
   },
   {
     element: <MainLayout />,
-    children: [...employeeDatabankRoutes],
+    children: [...employeeDatabankRoutes, ...talentAcquisitionRoutes],
   },
   {
     path: ROUTES.INVITE_PATTERN,

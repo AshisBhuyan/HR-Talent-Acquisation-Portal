@@ -1,0 +1,63 @@
+/* ---------------------------------------------------------------
+   Recruitment reports
+--------------------------------------------------------------- */
+
+.ta-funnel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.ta-funnel__row {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr) 48px;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ta-funnel__label {
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: var(--color-text);
+}
+
+.ta-funnel__bar-wrap {
+  min-width: 0;
+}
+
+.ta-funnel__bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 34px;
+  height: 26px;
+  padding: 0 0.5rem;
+  border-radius: 7px;
+  background: linear-gradient(90deg, var(--color-primary-dark), #9ed13f);
+  color: #fff;
+}
+
+.ta-funnel__bar-value {
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ta-funnel__share {
+  font-size: 0.76rem;
+  font-weight: 650;
+  color: var(--color-text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .ta-funnel__row {
+    grid-template-columns: 104px minmax(0, 1fr) 42px;
+    gap: 0.5rem;
+  }
+
+  .ta-funnel__label {
+    font-size: 0.72rem;
+  }
+}

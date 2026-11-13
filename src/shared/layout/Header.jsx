@@ -10,8 +10,27 @@ const SECTION_LABELS = {
   submissions: 'Submissions',
 };
 
+const TALENT_SECTION_LABELS = {
+  dashboard: 'Recruitment Dashboard',
+  applications: 'Candidate Applications',
+  screening: 'CV Screening',
+  shortlisting: 'Shortlisting',
+  interviews: 'Interviews',
+  'final-selection': 'Final Selection',
+  approvals: 'Admin Approval',
+  offers: 'Offer Management',
+  joining: 'Joining & Onboarding',
+  reports: 'Reports & Analytics',
+};
+
 function getSectionLabel(pathname) {
   if (pathname === '/hr/employee-databank') return 'Overview';
+
+  if (pathname.startsWith('/hr/talent-acquisition')) {
+    const segment = pathname.split('/').filter(Boolean).pop();
+    return TALENT_SECTION_LABELS[segment] || 'Talent Acquisition';
+  }
+
   const segment = pathname.split('/').filter(Boolean).pop();
   return SECTION_LABELS[segment] || 'Employee Profile';
 }
@@ -35,7 +54,11 @@ export default function Header({ onMenuClick }) {
       <nav className="app-header__breadcrumb" aria-label="Breadcrumb">
         <span>Ecometrix</span>
         <ChevronRight size={13} aria-hidden="true" />
-        <span>Employee CV Management</span>
+        <span>
+          {location.pathname.startsWith('/hr/talent-acquisition')
+            ? 'Talent Acquisition'
+            : 'Employee CV Management'}
+        </span>
         <ChevronRight size={13} aria-hidden="true" />
         <strong>{sectionLabel}</strong>
       </nav>

@@ -1,0 +1,35 @@
+/* ---------------------------------------------------------------
+   Candidate profile
+--------------------------------------------------------------- */
+
+.ta-profile-main .detail-item__label {
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+.ta-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ta-profile-header__avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-primary-line);
+  color: var(--color-primary-darker);
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+@media (max-width: 640px) {
+  .ta-profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
