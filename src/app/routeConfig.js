@@ -9,6 +9,10 @@ export const ROUTES = {
   employeeProfile: (employeeId) => `/hr/employee-databank/${employeeId}`,
   INVITE_PATTERN: '/employee-invite/:token',
   invite: (token) => `/employee-invite/${token}`,
+  CANDIDATE_OFFER_RESPONSE_PATTERN: '/candidate/offer-response/:token',
+  candidateOfferResponse: (token) => `/candidate/offer-response/${token}`,
+  CANDIDATE_DOCUMENT_SUBMISSION_PATTERN: '/candidate/document-submission/:token',
+  candidateDocumentSubmission: (token) => `/candidate/document-submission/${token}`,
 
   /* -------------------------------------------------------------
      Talent Acquisition module

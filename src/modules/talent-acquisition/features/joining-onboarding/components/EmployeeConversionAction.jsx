@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   CheckCircle2,
   Copy,
-  Download,
+  FileSpreadsheet,
+  FileText,
   FileWarning,
   Info,
   Send,
@@ -14,6 +15,10 @@ import Badge from '../../../../../shared/components/Badge.jsx';
 import { useToast } from '../../../../../shared/components/Toast.jsx';
 import { getHandoverStatusMeta } from '../../../constants/joiningStatus.js';
 import { buildEmployeeHandoverPayload, validateEmployeeHandover } from '../../../services/candidateToEmployeeService.js';
+import {
+  exportHandoverToExcel,
+  exportHandoverToPdf,
+} from '../services/employeeHandoverExportService.js';
 import { formatDate } from '../../../utils/formatDate.js';
 import { formatSalary } from '../../../utils/formatCandidateData.js';
 
@@ -76,18 +81,22 @@ export default function EmployeeConversionAction({
     }
   };
 
-  const handleDownload = () => {
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {
-      type: 'application/json;charset=utf-8',
-    });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${entry.candidate.candidateId}_${entry.application.applicationId}_handover.json`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(link.href);
-    toast.success('Handover payload downloaded.');
+  const handleExportExcel = () => {
+    try {
+      exportHandoverToExcel(entry, payload);
+      toast.success('Handover exported as an Excel workbook.');
+    } catch (exportError) {
+      toast.error(exportError.message);
+    }
+  };
+
+  const handleExportPdf = () => {
+    try {
+      exportHandoverToPdf(entry, payload);
+      toast.success('The print dialog opened. Choose "Save as PDF" to export the handover.');
+    } catch (exportError) {
+      toast.error(exportError.message);
+    }
   };
 
   return (
@@ -105,8 +114,11 @@ export default function EmployeeConversionAction({
           <Button variant="outline" icon={Copy} onClick={handleCopy}>
             {copied ? 'Copied' : 'Copy handover data'}
           </Button>
-          <Button variant="outline" icon={Download} onClick={handleDownload}>
-            Download JSON
+          <Button variant="outline" icon={FileSpreadsheet} onClick={handleExportExcel}>
+            Download Excel
+          </Button>
+          <Button variant="outline" icon={FileText} onClick={handleExportPdf}>
+            Download PDF
           </Button>
           <Button variant="outline" onClick={onClose}>
             Close

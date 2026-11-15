@@ -57,7 +57,8 @@ export default function ApprovalDecisionModal({
           <Button variant="outline" onClick={onClose} disabled={loading}>
             Close
           </Button>
-          {entry.approval.status === APPROVAL_STATUS.REJECTED && (
+          {(entry.approval.status === APPROVAL_STATUS.REJECTED ||
+            entry.approval.status === APPROVAL_STATUS.CLARIFICATION_REQUESTED) && (
             <Button variant="secondary" onClick={() => onResubmit(entry)} loading={loading}>
               Resubmit for approval
             </Button>

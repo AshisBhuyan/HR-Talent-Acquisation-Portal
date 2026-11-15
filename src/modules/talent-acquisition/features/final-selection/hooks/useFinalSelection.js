@@ -117,6 +117,7 @@ export function useFinalSelection() {
     error,
     actions,
     runAction,
+    refresh,
     decisions: Object.values(SELECTION_STATUS),
   };
 }

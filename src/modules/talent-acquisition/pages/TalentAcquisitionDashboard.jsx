@@ -28,6 +28,8 @@ export default function TalentAcquisitionDashboard() {
     jobs,
     interviews,
     activities,
+    emailEvents,
+    offers,
     stats,
     loading,
     error,
@@ -80,6 +82,28 @@ export default function TalentAcquisitionDashboard() {
     () => [...activities].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()).slice(0, 7),
     [activities]
   );
+
+  const recentEmails = useMemo(
+    () =>
+      [...(emailEvents || [])]
+        .sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime())
+        .slice(0, 6),
+    [emailEvents]
+  );
+
+  const candidateResponses = useMemo(() => {
+    const accepted = (offers || []).filter((offer) => offer.status === 'accepted').length;
+    const declined = (offers || []).filter((offer) => offer.status === 'declined').length;
+    return { accepted, declined };
+  }, [offers]);
+
+  const emailTypeLabel = (type) =>
+    ({
+      offer_letter: 'Offer letter',
+      document_request: 'Document request',
+      resubmission: 'Resubmission request',
+      interview_invitation: 'Interview invitation',
+    }[type] || 'Email');
 
   const screenedApplications = useMemo(
     () =>
@@ -266,6 +290,84 @@ export default function TalentAcquisitionDashboard() {
         </section>
       </div>
 
+      <div className="ta-dashboard-grid">
+        <section className="card">
+          <div className="card__header">
+            <div>
+              <div className="card__title">Simulated email activity</div>
+              <div className="card__subtitle">
+                Mock operations recorded by the Talent Acquisition module. No email is actually
+                delivered.
+              </div>
+            </div>
+            <Activity size={18} aria-hidden="true" />
+          </div>
+          <div className="card__body">
+            {recentEmails.length === 0 ? (
+              <EmptyState
+                icon={Activity}
+                title="No emails recorded yet"
+                description="Offer letters, document requests and resubmission notices appear here after they are sent (simulated)."
+              />
+            ) : (
+              <ul className="ta-activity">
+                {recentEmails.map((email) => (
+                  <li className="ta-activity__item" key={email.id}>
+                    <span className="ta-activity__dot ta-activity__dot--offer" aria-hidden="true" />
+                    <div className="ta-activity__body">
+                      <div className="ta-activity__message">
+                        {emailTypeLabel(email.type)} to {email.to || 'candidate'}{' '}
+                        <Badge variant="orange">Simulated</Badge>
+                      </div>
+                      <div className="ta-activity__meta">{formatDateTime(email.sentAt)}</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+
+        <section className="card">
+          <div className="card__header">
+            <div>
+              <div className="card__title">Candidate responses</div>
+              <div className="card__subtitle">Recorded through the candidate self-service links</div>
+            </div>
+            <ClipboardList size={18} aria-hidden="true" />
+          </div>
+          <div className="card__body">
+            <div className="ta-summary-grid">
+              <div className="ta-summary__item">
+                <div className="ta-summary__label">Offers accepted</div>
+                <div className="ta-summary__value">{candidateResponses.accepted}</div>
+              </div>
+              <div className="ta-summary__item">
+                <div className="ta-summary__label">Offers declined</div>
+                <div className="ta-summary__value">{candidateResponses.declined}</div>
+              </div>
+              <div className="ta-summary__item">
+                <div className="ta-summary__label">Offers sent</div>
+                <div className="ta-summary__value">{stats.offersSent}</div>
+              </div>
+              <div className="ta-summary__item">
+                <div className="ta-summary__label">Acceptance rate</div>
+                <div className="ta-summary__value">
+                  {candidateResponses.accepted + candidateResponses.declined > 0
+                    ? Math.round(
+                        (candidateResponses.accepted /
+                          (candidateResponses.accepted + candidateResponses.declined)) *
+                          100
+                      )
+                    : 0}
+                  %
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
       <section className="card">
         <div className="card__header">
           <div>
@@ -297,6 +399,14 @@ export default function TalentAcquisitionDashboard() {
             <div className="ta-summary__item">
               <div className="ta-summary__label">Selected candidates</div>
               <div className="ta-summary__value">{stats.selected}</div>
+            </div>
+            <div className="ta-summary__item">
+              <div className="ta-summary__label">Joining pending</div>
+              <div className="ta-summary__value">{stats.joiningPending}</div>
+            </div>
+            <div className="ta-summary__item">
+              <div className="ta-summary__label">Employees handed over</div>
+              <div className="ta-summary__value">{stats.employeesHandedOver}</div>
             </div>
             <div className="ta-summary__item">
               <div className="ta-summary__label">Average time to shortlist</div>

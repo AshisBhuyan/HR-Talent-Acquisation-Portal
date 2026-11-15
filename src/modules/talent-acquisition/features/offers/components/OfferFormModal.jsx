@@ -26,6 +26,7 @@ export default function OfferFormModal({
   open,
   offer,
   eligibleApplications,
+  initialApplicationId = '',
   onClose,
   onSubmit,
   loading,
@@ -49,10 +50,25 @@ export default function OfferFormModal({
         additionalTerms: offer.additionalTerms || '',
       });
     } else {
-      setValues(EMPTY_FORM);
+      const preselect = eligibleApplications.find(
+        (entry) => entry.application.applicationId === initialApplicationId
+      );
+      setValues(
+        preselect
+          ? {
+              ...EMPTY_FORM,
+              applicationId: initialApplicationId,
+              designation: preselect.job?.designation || preselect.job?.title || '',
+              department: preselect.job?.department || '',
+              employmentType: preselect.job?.employmentType || 'Full-time',
+            }
+          : initialApplicationId
+            ? { ...EMPTY_FORM, applicationId: initialApplicationId }
+            : EMPTY_FORM
+      );
     }
     setErrors({});
-  }, [open, offer]);
+  }, [open, offer, initialApplicationId, eligibleApplications]);
 
   const update = (key, value) => {
     setValues((current) => ({ ...current, [key]: value }));

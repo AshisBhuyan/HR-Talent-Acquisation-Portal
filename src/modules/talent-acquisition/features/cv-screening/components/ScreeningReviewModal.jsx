@@ -113,8 +113,8 @@ export default function ScreeningReviewModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={`Screening workspace Ã‚Â· ${entry.candidate.fullName}`}
-      subtitle={`${entry.job?.title || 'Position'} Ã‚Â· ${entry.application.applicationId}`}
+      title={`Screening workspace · ${entry.candidate.fullName}`}
+      subtitle={`${entry.job?.title || 'Position'} · ${entry.application.applicationId}`}
       size="xl"
       footer={
         <>
@@ -179,11 +179,11 @@ export default function ScreeningReviewModal({
               </div>
               <div className="detail-item">
                 <div className="detail-item__label">Position</div>
-                <div className="detail-item__value">{entry.job?.title || 'Ã¢â‚¬â€'}</div>
+                <div className="detail-item__value">{entry.job?.title || '—'}</div>
               </div>
               <div className="detail-item">
                 <div className="detail-item__label">Department</div>
-                <div className="detail-item__value">{entry.job?.department || 'Ã¢â‚¬â€'}</div>
+                <div className="detail-item__value">{entry.job?.department || '—'}</div>
               </div>
               <div className="detail-item">
                 <div className="detail-item__label">Experience</div>
@@ -191,7 +191,7 @@ export default function ScreeningReviewModal({
               </div>
               <div className="detail-item">
                 <div className="detail-item__label">Location</div>
-                <div className="detail-item__value">{entry.candidate.location || 'Ã¢â‚¬â€'}</div>
+                <div className="detail-item__value">{entry.candidate.location || '—'}</div>
               </div>
               <div className="detail-item">
                 <div className="detail-item__label">Applied on</div>
@@ -217,11 +217,11 @@ export default function ScreeningReviewModal({
             <div className="detail-grid detail-grid--3">
               <div className="detail-item">
                 <div className="detail-item__label">Title</div>
-                <div className="detail-item__value">{entry.job?.title || 'Ã¢â‚¬â€'}</div>
+                <div className="detail-item__value">{entry.job?.title || '—'}</div>
               </div>
               <div className="detail-item">
                 <div className="detail-item__label">Department</div>
-                <div className="detail-item__value">{entry.job?.department || 'Ã¢â‚¬â€'}</div>
+                <div className="detail-item__value">{entry.job?.department || '—'}</div>
               </div>
               <div className="detail-item">
                 <div className="detail-item__label">Required experience</div>
@@ -237,7 +237,7 @@ export default function ScreeningReviewModal({
               </div>
               <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
                 <div className="detail-item__label">Required qualification</div>
-                <div className="detail-item__value">{entry.job?.requiredQualification || 'Ã¢â‚¬â€'}</div>
+                <div className="detail-item__value">{entry.job?.requiredQualification || '—'}</div>
               </div>
               {entry.job?.description && (
                 <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
@@ -341,8 +341,8 @@ export default function ScreeningReviewModal({
                         <div className="ta-detail-list__title">{item.qualification}</div>
                         <div className="ta-detail-list__meta">
                           {item.institution}
-                          {item.specialization ? ` Ã‚Â· ${item.specialization}` : ''}
-                          {item.passingYear ? ` Ã‚Â· ${item.passingYear}` : ''}
+                          {item.specialization ? ` · ${item.specialization}` : ''}
+                          {item.passingYear ? ` · ${item.passingYear}` : ''}
                         </div>
                       </li>
                     ))}
@@ -392,8 +392,8 @@ export default function ScreeningReviewModal({
                   </p>
                 )}
                 <p className="ta-screening-ai__meta">
-                  Generated {formatDate(aiResult.generatedAt)} Ã‚Â· demonstration screening service
-                  (mock data) Ã‚Â· not live AI inference
+                  Generated {formatDate(aiResult.generatedAt)} · demonstration screening service
+                  (mock data) · not live AI inference
                 </p>
               </div>
             ) : (
@@ -438,7 +438,7 @@ export default function ScreeningReviewModal({
           <div className="ta-score-card">
             <div className="ta-score-card__label">Match score</div>
             <div className="ta-score-card__value">
-              {scoreValue !== null ? `${scoreValue}%` : 'Ã¢â‚¬â€'}
+              {scoreValue !== null ? `${scoreValue}%` : '—'}
             </div>
             <div className="ta-score-card__meta">
               {scoreValue !== null ? 'Score returned by the screening service' : 'Awaiting AI Result'}

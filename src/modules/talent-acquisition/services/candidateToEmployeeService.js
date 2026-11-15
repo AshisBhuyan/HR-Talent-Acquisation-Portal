@@ -1,6 +1,7 @@
 import { createServiceError } from './mockBackend.js';
 import { JOINING_STATUS, MANDATORY_CHECKLIST_KEYS } from '../constants/joiningStatus.js';
 import { formatDate } from '../utils/formatDate.js';
+import { isChecklistItemSatisfied } from '../utils/checklist.js';
 
 /**
  * Controlled integration boundary between Talent Acquisition and the
@@ -53,7 +54,9 @@ export function getHandoverReadiness(joining, { offer, application } = {}) {
 export function getMandatoryIncomplete(joining) {
   const missing = [];
 
-  const documents = Array.isArray(joining?.documents) ? joining.documents : [];
+  const documents = (Array.isArray(joining?.documents) ? joining.documents : []).filter(
+    (document) => document?.isCurrent !== false
+  );
   const documentByType = new Map(documents.map((document) => [document.type, document]));
 
   const checklistItems = Array.isArray(joining?.checklist) ? joining.checklist : [];
@@ -61,7 +64,9 @@ export function getMandatoryIncomplete(joining) {
 
   for (const key of MANDATORY_CHECKLIST_KEYS) {
     const item = checklist.get(key);
-    if (!item || item.status !== 'verified') {
+    // Satisfaction rule (shared with the UI): a mandatory item must be
+    // verified; Not Applicable never satisfies a mandatory item.
+    if (!item || !isChecklistItemSatisfied(item)) {
       const definition = MANDATORY_CHECKLIST_LABELS[key] || key;
       missing.push(`${definition} is not verified yet.`);
     }
@@ -74,11 +79,20 @@ export function getMandatoryIncomplete(joining) {
     missing.push(`The document "${document.fileName || document.type}" is not verified yet.`);
   }
 
-  // A mandatory document that has never been submitted at all.
-  const requiredDocumentTypes = ['identity', 'degree', 'bank'];
-  for (const type of requiredDocumentTypes) {
-    if (!documentByType.has(type)) {
-      missing.push(`A document of type "${type}" is still required.`);
+  // A mandatory document that has never been submitted at all. Educational
+  // Certificates satisfy the degree requirement.
+  const requiredDocumentGroups = [
+    { label: 'identity', types: ['identity'] },
+    { label: 'degree', types: ['degree', 'educational_certificates'] },
+    { label: 'bank', types: ['bank'] },
+  ];
+  for (const group of requiredDocumentGroups) {
+    const satisfied = group.types.some((type) => {
+      const document = documentByType.get(type);
+      return Boolean(document) && document.status !== 'pending';
+    });
+    if (!satisfied) {
+      missing.push(`A document of type "${group.label}" is still required.`);
     }
   }
 

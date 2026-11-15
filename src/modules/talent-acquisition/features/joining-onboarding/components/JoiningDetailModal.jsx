@@ -6,7 +6,9 @@ import DocumentVerification from './DocumentVerification.jsx';
 import JoiningChecklist from './JoiningChecklist.jsx';
 import { getJoiningStatusMeta, HANDOVER_STATUS, getHandoverStatusMeta } from '../../../constants/joiningStatus.js';
 import { getOfferStatusMeta } from '../../../constants/offerStatus.js';
+import { getDocumentRequestStatusMeta } from '../../../constants/documentRequestRules.js';
 import { formatDate } from '../../../utils/formatDate.js';
+import { areMandatoryChecklistItemsSatisfied } from '../../../utils/checklist.js';
 
 /**
  * Joining details screen: candidate/offer summary, documents, checklist and
@@ -16,6 +18,7 @@ export default function JoiningDetailModal({
   open,
   entry,
   loading,
+  documentRequest = null,
   onClose,
   onAddDocument,
   onVerify,
@@ -35,10 +38,9 @@ export default function JoiningDetailModal({
   const handoverMeta = getHandoverStatusMeta(entry.handoverStatus);
 
   const joined = joining.status === 'joined';
-  const checklistSatisfied = checklist.every((item) => {
-    if (!item.mandatory) return true;
-    return item.status === 'verified' || item.status === 'not_applicable';
-  });
+  // Same eligibility rule the service applies: mandatory checklist items
+  // must all be verified; N/A never satisfies a mandatory item.
+  const checklistSatisfied = areMandatoryChecklistItemsSatisfied(checklist);
   const documentsComplete = documents.length === 0
     ? false
     : documents.every((document) =>
@@ -69,12 +71,17 @@ export default function JoiningDetailModal({
           <Button variant="outline" onClick={onClose} disabled={loading}>
             Close
           </Button>
-          {!joined && (
+           {!joined && (
             <Button
               icon={UserRound}
               onClick={() => onMarkJoined(entry)}
               loading={loading}
-              disabled={loading}
+              disabled={loading || !canMarkJoined}
+              title={
+                canMarkJoined
+                  ? 'Mark the candidate as joined'
+                  : 'Resolve the blocking items listed below first'
+              }
             >
               Mark as joined
             </Button>
@@ -147,6 +154,23 @@ export default function JoiningDetailModal({
           <div className="detail-item__label">Documents verified</div>
           <div className="detail-item__value">{entry.documentsVerified} of {entry.documentsTotal}</div>
         </div>
+        <div className="detail-item">
+          <div className="detail-item__label">Documents awaiting verification</div>
+          <div className="detail-item__value">{entry.documentsAwaitingVerification ?? '—'}</div>
+        </div>
+        {documentRequest && (
+          <div className="detail-item">
+            <div className="detail-item__label">Document request</div>
+            <div className="detail-item__value">
+              <Badge variant={getDocumentRequestStatusMeta(documentRequest.status).variant} dot>
+                {getDocumentRequestStatusMeta(documentRequest.status).label}
+              </Badge>
+              {documentRequest.submittedAt && (
+                <span className="cell-muted"> · submitted {formatDate(documentRequest.submittedAt)}</span>
+              )}
+            </div>
+          </div>
+        )}
         <div className="detail-item">
           <div className="detail-item__label">Handover status</div>
           <div className="detail-item__value">

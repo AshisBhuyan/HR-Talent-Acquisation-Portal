@@ -7,7 +7,9 @@ import {
   CHECKLIST_STATUS_META,
   JOINING_CHECKLIST_CATEGORIES,
 } from '../../../constants/joiningStatus.js';
+import { DOCUMENT_CHECKLIST_KEYS } from '../../../constants/documentRequestRules.js';
 import { formatDate } from '../../../utils/formatDate.js';
+import { summarizeChecklist } from '../../../utils/checklist.js';
 
 /**
  * Joining checklist. Items are grouped by category with a per-item status;
@@ -15,6 +17,17 @@ import { formatDate } from '../../../utils/formatDate.js';
  */
 export default function JoiningChecklist({ entry, onSetStatus, loading }) {
   const checklist = entry?.checklist || [];
+
+  // Checklist items that are backed by a currently submitted document are
+  // managed through that document record — they are not toggled manually,
+  // so the two can never contradict each other.
+  const documentBackedKeys = useMemo(() => {
+    const keys = new Set();
+    for (const document of entry?.documents || []) {
+      for (const key of DOCUMENT_CHECKLIST_KEYS[document.type] || []) keys.add(key);
+    }
+    return keys;
+  }, [entry?.documents]);
 
   const groups = useMemo(
     () =>
@@ -25,7 +38,9 @@ export default function JoiningChecklist({ entry, onSetStatus, loading }) {
     [checklist]
   );
 
-  const progress = entry?.checklistProgress || { completed: 0, total: 0, mandatoryCompleted: 0, mandatoryTotal: 0, percent: 0 };
+  // Progress is derived from the persisted checklist data itself, so the UI
+  // always reflects the database regardless of which path produced it.
+  const progress = entry?.checklistProgress || summarizeChecklist(entry?.checklist);
 
   const setStatus = (key, status, remarks = '') => {
     if (loading) return;
@@ -60,7 +75,8 @@ export default function JoiningChecklist({ entry, onSetStatus, loading }) {
           <ul className="ta-checklist">
             {group.items.map((item) => {
               const meta = CHECKLIST_STATUS_META[item.status] || CHECKLIST_STATUS_META.pending;
-              const canToggle = !loading;
+              const documentBacked = documentBackedKeys.has(item.key);
+              const canToggle = !loading && !documentBacked;
 
               return (
                 <li className="ta-checklist__item" key={item.key}>
@@ -98,9 +114,15 @@ export default function JoiningChecklist({ entry, onSetStatus, loading }) {
                       </span>
                     </label>
                     <Badge variant={meta.variant} dot={item.status === 'verified'}>
-                      {meta.label}
+                      {documentBacked ? 'Document-driven' : meta.label}
                     </Badge>
                   </div>
+                  {documentBacked ? (
+                    <p className="cell-muted" style={{ margin: '0.25rem 0 0.4rem' }}>
+                      Verified through the document record for this item. Use the document
+                      verification actions above to change its status.
+                    </p>
+                  ) : (
                   <div className="ta-checklist__actions">
                     {item.status !== CHECKLIST_ITEM_STATUS.VERIFIED && item.status !== CHECKLIST_ITEM_STATUS.NOT_APPLICABLE && (
                       <Button
@@ -126,7 +148,7 @@ export default function JoiningChecklist({ entry, onSetStatus, loading }) {
                         Reject
                       </Button>
                     )}
-                    {item.status !== CHECKLIST_ITEM_STATUS.NOT_APPLICABLE && (
+                    {!item.mandatory && item.status !== CHECKLIST_ITEM_STATUS.NOT_APPLICABLE && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -135,6 +157,7 @@ export default function JoiningChecklist({ entry, onSetStatus, loading }) {
                         onClick={() =>
                           setStatus(item.key, 'not_applicable', 'Not applicable for this candidate.')
                         }
+                        title="Not applicable (optional items only)"
                       >
                         N/A
                       </Button>
@@ -152,6 +175,7 @@ export default function JoiningChecklist({ entry, onSetStatus, loading }) {
                       </Button>
                     )}
                   </div>
+                  )}
                 </li>
               );
             })}

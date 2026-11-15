@@ -62,6 +62,7 @@ export default function CVScreeningPage() {
     error,
     actions,
     runAction,
+    refresh,
   } = useScreeningQueue();
 
   const [reviewEntry, setReviewEntry] = useState(null);
@@ -140,14 +141,16 @@ export default function CVScreeningPage() {
     }
   };
 
-  const handlePassed = async () => {
+  const handlePassed = async (remarks) => {
     if (!reviewEntry) return;
     setBusy(true);
     try {
       await runAction(actions.saveScreeningDecision, reviewEntry.application.applicationId, {
         status: SCREENING_STATUS.PASSED,
         score: reviewEntry.screening.score,
-        hrRemarks: reviewEntry.screening.hrRemarks || '',
+        // Persist whatever the HR reviewer typed. Fall back to the stored
+        // remarks when the Passed action carries no remarks at all.
+        hrRemarks: remarks?.trim() ? remarks : reviewEntry.screening.hrRemarks || '',
       });
       toast.success(
         `${reviewEntry.candidate.fullName} passed the screening and is awaiting the shortlisting decision.`
@@ -203,7 +206,7 @@ export default function CVScreeningPage() {
         title="CV Screening"
         subtitle="Review candidate CVs, evaluate job requirement matching, and record HR screening decisions."
         actions={
-          <Button variant="outline" icon={RefreshCw} onClick={() => window.location.reload()}>
+          <Button variant="outline" icon={RefreshCw} onClick={() => refresh()}>
             Refresh data
           </Button>
         }

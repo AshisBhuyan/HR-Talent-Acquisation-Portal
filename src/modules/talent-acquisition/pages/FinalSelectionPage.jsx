@@ -19,6 +19,7 @@ export default function FinalSelectionPage() {
     error,
     actions,
     runAction,
+    refresh,
   } = useFinalSelection();
 
   const [reviewEntry, setReviewEntry] = useState(null);
@@ -66,7 +67,7 @@ export default function FinalSelectionPage() {
         title="Final Selection"
         subtitle="HR evaluation of the candidates that completed their interview rounds. Record the hiring recommendation and submit it for admin approval."
         actions={
-          <Button variant="outline" icon={RefreshCw} onClick={() => window.location.reload()}>
+          <Button variant="outline" icon={RefreshCw} onClick={() => refresh()}>
             Refresh data
           </Button>
         }

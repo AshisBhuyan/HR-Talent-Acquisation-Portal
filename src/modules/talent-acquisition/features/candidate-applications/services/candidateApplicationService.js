@@ -478,6 +478,16 @@ export const candidateApplicationService = {
       const updated = restoreFromHoldToRecord(application, { remarks, heldBy });
       replaceApplication(database, updated);
 
+      // Keep the shortlist record in sync: a candidate resumed from any
+      // page returns to the active shortlist view. The record and its
+      // remarks are preserved untouched; only the status and the update
+      // timestamp change. Shortlist statuses mirror APPLICATION_STATUS.
+      database.shortlistings = (database.shortlistings || []).map((item) =>
+        item.applicationId === applicationId && item.status === APPLICATION_STATUS.ON_HOLD
+          ? { ...item, status: 'shortlisted', updatedAt: updated.updatedAt }
+          : item
+      );
+
       const candidate = getCandidate(database, updated.candidateId);
       recordActivity(database, {
         type: 'application',

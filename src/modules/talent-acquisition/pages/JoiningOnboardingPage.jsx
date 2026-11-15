@@ -9,12 +9,14 @@ import JoiningTable from '../features/joining-onboarding/components/JoiningTable
 import JoiningSummaryCards from '../features/joining-onboarding/components/JoiningSummaryCards.jsx';
 import JoiningDetailModal from '../features/joining-onboarding/components/JoiningDetailModal.jsx';
 import EmployeeConversionAction from '../features/joining-onboarding/components/EmployeeConversionAction.jsx';
+import AddJoiningDocumentModal from '../features/joining-onboarding/components/AddJoiningDocumentModal.jsx';
 import DocumentPreviewModal from '../features/candidate-documents/components/DocumentPreviewModal.jsx';
 import OfferLetterModal from '../features/offers/components/OfferLetterModal.jsx';
 import useJoining from '../features/joining-onboarding/hooks/useJoining.js';
-import candidateDocumentService from '../features/candidate-documents/services/candidateDocumentService.js';
+import { getJoiningDocumentUrl, downloadJoiningDocument } from '../features/joining-onboarding/services/joiningDocumentFiles.js';
 import { useTalentAcquisition } from '../context/TalentAcquisitionContext.jsx';
 import { JOINING_STATUS_OPTIONS, HANDOVER_STATUS_OPTIONS } from '../constants/joiningStatus.js';
+import { getDocumentRequestStatusMeta } from '../constants/documentRequestRules.js';
 import '../styles/joiningOnboarding.css';
 
 const VERIFICATION_OPTIONS = [
@@ -25,8 +27,10 @@ const VERIFICATION_OPTIONS = [
 
 export default function JoiningOnboardingPage() {
   const toast = useToast();
-  const { candidates, jobs } = useTalentAcquisition();
+  const { candidates, jobs, applications, documentRequests, refresh } =
+    useTalentAcquisition();
   const {
+    entries,
     visibleEntries,
     summary,
     positions,
@@ -47,12 +51,23 @@ export default function JoiningOnboardingPage() {
   const [conversionEntry, setConversionEntry] = useState(null);
   const [startEntry, setStartEntry] = useState(null);
   const [markJoinedEntry, setMarkJoinedEntry] = useState(null);
+  const [addDocumentEntry, setAddDocumentEntry] = useState(null);
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState(null);
 
   const jobById = (jobId) => jobs.find((job) => job.jobId === jobId);
   const candidateById = (candidateId) =>
     candidates.find((candidate) => candidate.candidateId === candidateId);
+
+  // The modal renders the live, refreshed entry for its row — not the stale
+  // snapshot captured when it was opened — so statuses and checklist
+  // progress update after every action.
+  const liveDetailEntry = detailEntry
+    ? entries.find((item) => item.rowKey === detailEntry.rowKey) ?? detailEntry
+    : null;
+  const liveConversionEntry = conversionEntry
+    ? entries.find((item) => item.rowKey === conversionEntry.rowKey) ?? conversionEntry
+    : null;
 
   const run = async (fn) => {
     setBusy(true);
@@ -143,22 +158,19 @@ export default function JoiningOnboardingPage() {
       }
     });
 
-  const handleAddDocument = (entry) =>
+  const handleAddDocument = (entry) => setAddDocumentEntry(entry);
+
+  const handleAddDocumentSubmit = (payload) =>
     run(async () => {
-      const fileName = window.prompt('Enter the file name of the submitted document');
-      if (!fileName) return;
-      const type = window.prompt(
-        'Document type (identity, address, photograph, degree, marksheets, bank, emergency_contact, employment_details)'
-      );
-      if (!type) return;
+      if (!addDocumentEntry) return;
       try {
-        await runAction(actions.addJoiningDocument, entry.joining.joiningId, {
-          type,
-          fileName,
-          mimeType: 'application/pdf',
-          sizeBytes: 0,
-        });
+        await runAction(
+          actions.addJoiningDocument,
+          addDocumentEntry.joining.joiningId,
+          payload
+        );
         toast.success('The document was recorded.');
+        setAddDocumentEntry(null);
       } catch (actionError) {
         toast.error(actionError.message);
       }
@@ -190,19 +202,22 @@ export default function JoiningOnboardingPage() {
       }
     });
 
-  const handlePreviewDocument = (document) => {
+  const handlePreviewDocument = async (document) => {
     if (!detailEntry) return;
-    const url = candidateDocumentService.getPreviewUrl(document, {
-      candidate: candidateById(detailEntry.candidate.candidateId),
-      job: jobById(detailEntry.application.jobId),
-    });
-    setPreview({ document, url, candidate: candidateById(detailEntry.candidate.candidateId) });
+    const candidate = candidateById(detailEntry.candidate.candidateId);
+    const job = jobById(detailEntry.application.jobId);
+    try {
+      const url = await getJoiningDocumentUrl(document, { candidate, job });
+      setPreview({ document, url, candidate });
+    } catch (previewError) {
+      toast.error(previewError.message);
+    }
   };
 
-  const handleDownloadDocument = (document) => {
+  const handleDownloadDocument = async (document) => {
     if (!detailEntry) return;
     try {
-      candidateDocumentService.downloadDocument(document, {
+      await downloadJoiningDocument(document, {
         candidate: candidateById(detailEntry.candidate.candidateId),
         job: jobById(detailEntry.application.jobId),
       });
@@ -211,6 +226,18 @@ export default function JoiningOnboardingPage() {
       toast.error(downloadError.message);
     }
   };
+
+  const pendingDocumentRequests = (documentRequests || [])
+    .filter((request) => request.status !== 'submitted')
+    .map((request) => ({
+      request,
+      candidate: candidateById(request.candidateId),
+      application: (applications || []).find(
+        (item) => item.applicationId === request.applicationId
+      ),
+      statusMeta: getDocumentRequestStatusMeta(request.status),
+    }))
+    .filter((entry) => entry.candidate);
 
   const summaryCards = summary;
 
@@ -221,7 +248,7 @@ export default function JoiningOnboardingPage() {
         title="Joining & Onboarding"
         subtitle="Track the joining progress of accepted offers, verify documents, mark candidates as joined and hand their records over to the Employee Databank."
         actions={
-          <Button variant="outline" icon={RefreshCw} onClick={() => window.location.reload()}>
+          <Button variant="outline" icon={RefreshCw} onClick={() => refresh()}>
             Refresh data
           </Button>
         }
@@ -313,6 +340,36 @@ export default function JoiningOnboardingPage() {
           )}
         </div>
       </section>
+
+      {pendingDocumentRequests.length > 0 && (
+        <section className="card">
+          <div className="card__header">
+            <div>
+              <div className="card__title">Document submission requests awaiting the candidate</div>
+              <div className="card__subtitle">
+                Sent after the offer was accepted (simulated email). They move to the verification
+                queue once the candidate submits.
+              </div>
+            </div>
+          </div>
+          <div className="card__body">
+            <ul className="ta-list">
+              {pendingDocumentRequests.map(({ request, candidate, application, statusMeta }) => (
+                <li className="ta-list__item" key={request.requestId}>
+                  <div className="ta-list__body">
+                    <div className="ta-list__title">{candidate.fullName}</div>
+                    <div className="ta-list__meta">
+                      {application?.applicationId} · requested{' '}
+                      {request.requestedAt?.slice(0, 10)}
+                    </div>
+                  </div>
+                  <span className={`badge badge--${statusMeta.variant}`}>{statusMeta.label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
 
       {offersAwaitingJoining.length > 0 && (
         <section className="card">
@@ -408,9 +465,16 @@ export default function JoiningOnboardingPage() {
       )}
 
       <JoiningDetailModal
-        open={Boolean(detailEntry)}
-        entry={detailEntry}
+        open={Boolean(liveDetailEntry)}
+        entry={liveDetailEntry}
         loading={busy}
+        documentRequest={
+          liveDetailEntry
+            ? (documentRequests || []).find(
+                (item) => item.applicationId === liveDetailEntry.application.applicationId
+              ) || null
+            : null
+        }
         onClose={() => setDetailEntry(null)}
         onAddDocument={handleAddDocument}
         onVerify={handleVerify}
@@ -423,9 +487,17 @@ export default function JoiningOnboardingPage() {
         onDownload={handleDownloadDocument}
       />
 
+      <AddJoiningDocumentModal
+        open={Boolean(addDocumentEntry)}
+        joiningId={addDocumentEntry?.joining?.joiningId}
+        loading={busy}
+        onClose={() => setAddDocumentEntry(null)}
+        onSubmit={handleAddDocumentSubmit}
+      />
+
       <EmployeeConversionAction
-        open={Boolean(conversionEntry)}
-        entry={conversionEntry}
+        open={Boolean(liveConversionEntry)}
+        entry={liveConversionEntry}
         loading={busy}
         onClose={() => setConversionEntry(null)}
         onPrepare={handlePrepareHandover}

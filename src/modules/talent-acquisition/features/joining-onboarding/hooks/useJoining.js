@@ -6,6 +6,8 @@ import {
   createDefaultChecklist,
 } from '../../../constants/joiningStatus.js';
 import { OFFER_STATUS } from '../../../constants/offerStatus.js';
+import { currentDocuments } from '../../document-requests/services/documentRequestService.js';
+import { summarizeChecklist } from '../../../utils/checklist.js';
 
 const DEFAULT_FILTERS = {
   search: '',
@@ -70,24 +72,21 @@ export function useJoining() {
           const job = jobs.find((item) => item.jobId === application.jobId);
           const offer = offers.find((item) => item.offerId === joining.offerId);
 
-          const documents = Array.isArray(joining.documents) ? joining.documents : [];
+          const documents = currentDocuments(joining).map((document) => ({
+            ...document,
+            version: document.version || 1,
+          }));
+          const supersededDocuments = (Array.isArray(joining.documents) ? joining.documents : [])
+            .filter((document) => document?.isCurrent === false)
+            .map((document) => ({ ...document, version: document.version || 1 }));
           const checklist = createDefaultChecklist(joining.checklist);
+          const checklistSummary = summarizeChecklist(checklist);
 
           const documentsVerified = documents.filter((item) => item.status === 'verified').length;
           const documentsTotal = documents.length;
-          const mandatoryVerified = checklist.filter(
-            (item) => item.mandatory && item.status === 'verified'
-          ).length;
-          const mandatoryTotal = checklist.filter((item) => item.mandatory).length;
-          const checklistPercent = checklist.length
-            ? Math.round(
-                (checklist.filter((item) =>
-                  ['verified', 'not_applicable'].includes(item.status)
-                ).length /
-                  checklist.length) *
-                  100
-              )
-            : 0;
+          const mandatoryVerified = checklistSummary.mandatoryCompleted;
+          const mandatoryTotal = checklistSummary.mandatoryTotal;
+          const checklistPercent = checklistSummary.percent;
 
           // Aggregate document verification status for filtering.
           let verification = 'all_verified';
@@ -112,16 +111,28 @@ export function useJoining() {
             job,
             checklist,
             checklistPercent,
-            checklistCompleted: checklist.filter((item) =>
-              ['verified', 'not_applicable'].includes(item.status)
-            ).length,
-            checklistTotal: checklist.length,
+            checklistCompleted: checklistSummary.completed,
+            checklistTotal: checklistSummary.total,
+            checklistProgress: {
+              completed: checklistSummary.completed,
+              total: checklistSummary.total,
+              mandatoryCompleted: checklistSummary.mandatoryCompleted,
+              mandatoryTotal: checklistSummary.mandatoryTotal,
+              percent: checklistSummary.percent,
+            },
             mandatoryVerified,
             mandatoryTotal,
             documents,
+            supersededDocuments,
             documentsVerified,
             documentsTotal,
             documentsPending: documentsTotal - documentsVerified,
+            documentsAwaitingVerification: documents.filter((item) =>
+              ['submitted', 'under_verification'].includes(item.status)
+            ).length,
+            documentsResubmissionRequired: documents.filter(
+              (item) => item.status === 'resubmission_required'
+            ).length,
             verification,
             handoverStatus,
             handover: joining.handover || null,
@@ -188,6 +199,17 @@ export function useJoining() {
           entry.handoverStatus !== HANDOVER_STATUS.IMPORTED
       ),
       imported: count((entry) => entry.handoverStatus === HANDOVER_STATUS.IMPORTED),
+      handedOver: count(
+        (entry) => entry.joining.handover?.status === HANDOVER_STATUS.IMPORTED
+      ),
+      documentsAwaitingVerification: enrichedEntries.reduce(
+        (total, entry) => total + entry.documentsAwaitingVerification,
+        0
+      ),
+      resubmissionRequired: enrichedEntries.reduce(
+        (total, entry) => total + entry.documentsResubmissionRequired,
+        0
+      ),
     };
   }, [enrichedEntries]);
 

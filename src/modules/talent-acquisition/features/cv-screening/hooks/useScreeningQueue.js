@@ -271,6 +271,7 @@ export function useScreeningQueue() {
     error,
     actions,
     runAction,
+    refresh,
     canShortlist: (application) => application.status === APPLICATION_STATUS.UNDER_SCREENING,
   };
 }

@@ -1,4 +1,4 @@
-import { Download, RotateCcw } from 'lucide-react';
+import { FileSpreadsheet, FileText, RotateCcw } from 'lucide-react';
 import { Select } from '../../../../../shared/components/Input.jsx';
 import Button from '../../../../../shared/components/Button.jsx';
 import { RECRUITMENT_STAGE_OPTIONS } from '../../../constants/recruitmentStages.js';
@@ -11,7 +11,8 @@ export default function ReportFilters({
   jobOptions,
   onChange,
   onReset,
-  onExport,
+  onExportExcel,
+  onExportPdf,
   loading,
 }) {
   return (
@@ -59,8 +60,23 @@ export default function ReportFilters({
       <Button variant="ghost" size="sm" icon={RotateCcw} onClick={onReset} disabled={loading}>
         Reset
       </Button>
-      <Button variant="outline" size="sm" icon={Download} onClick={onExport} disabled={loading}>
-        Export CSV
+      <Button
+        variant="outline"
+        size="sm"
+        icon={FileSpreadsheet}
+        onClick={onExportExcel}
+        disabled={loading}
+      >
+        Export Excel
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        icon={FileText}
+        onClick={onExportPdf}
+        disabled={loading}
+      >
+        Export PDF
       </Button>
     </div>
   );

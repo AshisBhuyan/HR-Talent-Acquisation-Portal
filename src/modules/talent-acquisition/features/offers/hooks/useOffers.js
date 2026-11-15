@@ -123,6 +123,7 @@ export function useOffers() {
     error,
     actions,
     runAction,
+    refresh,
   };
 }
 

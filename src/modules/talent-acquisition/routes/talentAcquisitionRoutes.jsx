@@ -37,6 +37,7 @@ export const talentAcquisitionRoutes = [
       { index: true, element: <Navigate to="dashboard" replace /> },
       { path: 'dashboard', element: <TalentAcquisitionDashboard /> },
       { path: 'applications', element: <CandidateApplicationsPage /> },
+      { path: 'applications/:applicationId', element: <CandidateProfilePage /> },
       { path: 'screening', element: <CVScreeningPage /> },
       { path: 'shortlisting', element: <ShortlistingPage /> },
       { path: 'interviews', element: <InterviewManagementPage /> },
@@ -46,14 +47,6 @@ export const talentAcquisitionRoutes = [
       { path: 'joining', element: <JoiningOnboardingPage /> },
       { path: 'reports', element: <RecruitmentReportsPage /> },
     ],
-  },
-  {
-    path: ROUTES.TALENT_APPLICATION_PATTERN,
-    element: (
-      <TalentAcquisitionProvider>
-        <CandidateProfilePage />
-      </TalentAcquisitionProvider>
-    ),
   },
 ];
 

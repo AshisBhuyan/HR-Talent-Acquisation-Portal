@@ -1,5 +1,6 @@
 import {
   appendActivity,
+  appendEmailEvent,
   createServiceError,
   delay,
   findRecord,
@@ -31,6 +32,20 @@ import {
   getMandatoryIncomplete,
   validateEmployeeHandover,
 } from '../../../services/candidateToEmployeeService.js';
+import { ensureJoiningForOffer } from '../../../services/joiningCreation.js';
+import { isChecklistItemSatisfied } from '../../../utils/checklist.js';
+import {
+  DOCUMENT_CHECKLIST_KEYS,
+  getRequestDocumentLabel,
+} from '../../../constants/documentRequestRules.js';
+import {
+  buildDocumentSubmissionUrl,
+  buildResubmissionEmail,
+} from '../../offer-emails/services/offerEmailService.js';
+import {
+  deriveRequestStatus,
+  ensureDocumentRequestForOffer,
+} from '../../document-requests/services/documentRequestService.js';
 import employeeService from '../../../../employee-databank/features/employees/services/employeeService.js';
 import { buildApplicationRow } from '../../../utils/formatCandidateData.js';
 
@@ -58,33 +73,50 @@ function enrichJoining(database, joining) {
   const offer = findRecord(database.offers, (item) => item.offerId === joining.offerId);
 
   const checklist = createDefaultChecklist(joining.checklist);
-  const documents = (Array.isArray(joining.documents) ? joining.documents : []).map(
-    (document) => ({
+  const allDocuments = Array.isArray(joining.documents) ? joining.documents : [];
+  const documents = allDocuments
+    .filter((document) => document?.isCurrent !== false)
+    .map((document) => ({
       ...document,
       label: getDocumentLabel(document.type),
+      version: document.version || 1,
       status: document.status || 'pending',
       verified: document.status === 'verified',
       history: Array.isArray(document.history) ? document.history : [],
-    })
-  );
+    }));
+  const supersededDocuments = allDocuments
+    .filter((document) => document?.isCurrent === false)
+    .map((document) => ({
+      ...document,
+      label: getDocumentLabel(document.type),
+      version: document.version || 1,
+      superseded: true,
+      history: Array.isArray(document.history) ? document.history : [],
+    }));
 
   const mandatoryTotal = MANDATORY_CHECKLIST_KEYS.length;
   const mandatoryCompleted = checklist.filter(
-    (item) => MANDATORY_CHECKLIST_KEYS.includes(item.key) && item.status === 'verified'
+    (item) => MANDATORY_CHECKLIST_KEYS.includes(item.key) && isChecklistItemSatisfied(item)
   ).length;
-  const checklistCompleted = checklist.filter((item) =>
-    ['verified', 'not_applicable'].includes(item.status)
-  ).length;
+  const checklistCompleted = checklist.filter((item) => isChecklistItemSatisfied(item)).length;
 
   const documentsVerified = documents.filter((item) => item.status === 'verified').length;
   const documentsPending = documents.filter(
-    (item) => !['verified', 'not_applicable'].includes(item.status)
+    (item) =>
+      !['verified', 'not_applicable'].includes(item.status)
+  ).length;
+  const documentsAwaitingVerification = documents.filter((item) =>
+    ['submitted', 'under_verification'].includes(item.status)
+  ).length;
+  const documentsResubmissionRequired = documents.filter(
+    (item) => item.status === 'resubmission_required'
   ).length;
 
   return {
     ...joining,
     checklist,
     documents,
+    supersededDocuments,
     checklistProgress: {
       completed: checklistCompleted,
       total: checklist.length,
@@ -94,6 +126,9 @@ function enrichJoining(database, joining) {
     },
     documentsVerified,
     documentsPending,
+    documentsAwaitingVerification,
+    documentsResubmissionRequired,
+    documentsTotal: documents.length,
     application: application
       ? buildApplicationRow(application, { candidate, job })
       : null,
@@ -115,7 +150,12 @@ function getDocumentLabel(type) {
 
 function upsertChecklistItem(database, joining, key, status, remark = '', user = HR) {
   const now = new Date().toISOString();
-  const checklist = createDefaultChecklist(joining.checklist).map((item) => {
+  // Re-read the joining record inside the mutation so sequential updates of
+  // different checklist items never clobber each other.
+  const current =
+    findRecord(database.joinings, (item) => item.joiningId === joining.joiningId) ||
+    joining;
+  const checklist = createDefaultChecklist(current.checklist).map((item) => {
     if (item.key !== key) return item;
     const definition = getChecklistDefinition(key);
     return {
@@ -140,8 +180,12 @@ function upsertChecklistItem(database, joining, key, status, remark = '', user =
     item.joiningId === joining.joiningId ? { ...item, checklist, updatedAt: now } : item
   );
 
-  const map = new Map(checklist.map((item) => [item.key, item]));
-  return { checklist, item: map.get(key) };
+  const live = findRecord(
+    database.joinings,
+    (item) => item.joiningId === joining.joiningId
+  );
+  const map = new Map(live.checklist.map((item) => [item.key, item]));
+  return { checklist: live.checklist, item: map.get(key) };
 }
 
 function statusLabel(status) {
@@ -190,15 +234,19 @@ function updateDocumentStatus(database, joining, documentId, status, remark, use
 }
 
 function decideVerificationStatus(documents, checklist, currentStatus) {
-  const mandatoryDocuments = documents.filter((document) =>
-    MANDATORY_CHECKLIST_KEYS.includes(document.type)
+  const currentDocuments = (documents || []).filter((document) => document?.isCurrent !== false);
+  const mandatoryDocuments = currentDocuments.filter((document) =>
+    MANDATORY_CHECKLIST_KEYS.includes(document.type) ||
+    document.type === 'educational_certificates'
   );
   const allMandatoryDocumentsVerified = mandatoryDocuments.every(
     (document) => document.status === 'verified'
   );
+  // Satisfaction rule (shared with the UI): a mandatory item must be
+  // verified; Not Applicable never satisfies a mandatory item.
   const mandatoryChecklistComplete = checklist
     .filter((item) => MANDATORY_CHECKLIST_KEYS.includes(item.key))
-    .every((item) => item.status === 'verified');
+    .every((item) => isChecklistItemSatisfied(item));
 
   if (allMandatoryDocumentsVerified && mandatoryChecklistComplete) {
     return JOINING_STATUS.READY_TO_JOIN;
@@ -293,43 +341,8 @@ export const joiningService = {
         throw createServiceError('A joining record already exists for this offer.');
       }
 
-      const now = new Date().toISOString();
-      const record = {
-        joiningId: makeId('jng'),
-        applicationId: offer.applicationId,
-        candidateId: offer.candidateId,
-        offerId: offer.offerId,
-        status: JOINING_STATUS.DOCUMENTS_PENDING,
-        joiningDate: offer.joiningDate,
-        joinedAt: null,
-        joinedBy: '',
-        documents: [],
-        checklist: createDefaultChecklist(),
-        handover: null,
-        updatedAt: now,
-      };
-
-      database.joinings.push(record);
-
-      transitionApplication(database, offer.applicationId, APPLICATION_STATUS.JOINING, {
-        note: 'Joining checklist opened after the offer was accepted',
-        at: now,
-      });
-
-      const candidate = findRecord(
-        database.candidates,
-        (item) => item.candidateId === offer.candidateId
-      );
-      appendActivity(database, {
-        type: 'joining',
-        applicationId: offer.applicationId,
-        candidateId: offer.candidateId,
-        action: 'Joining Started',
-        previousStatus: APPLICATION_STATUS.OFFER,
-        status: APPLICATION_STATUS.JOINING,
-        note: 'Joining checklist opened after the offer was accepted',
-        message: `Joining started for ${candidate?.fullName || 'candidate'}`,
-      });
+      const note = 'Joining checklist opened after the offer was accepted';
+      const { joining: record } = ensureJoiningForOffer(database, offer, { note });
 
       return record;
     });
@@ -379,32 +392,63 @@ export const joiningService = {
       }
 
       const now = new Date().toISOString();
+      const allDocuments = Array.isArray(joining.documents) ? [...joining.documents] : [];
+
+      // Supersede the current version of the same document type, if any.
+      const documents = allDocuments.map((document) =>
+        document.type === payload.type && document.isCurrent !== false
+          ? {
+              ...document,
+              isCurrent: false,
+              history: [
+                ...(document.history || []),
+                {
+                  at: now,
+                  action: 'Replaced',
+                  by: HR,
+                  remarks: 'Replaced by a newer version recorded by HR.',
+                },
+              ],
+            }
+          : document
+      );
+
+      const version = documents.filter((document) => document.type === payload.type).length + 1;
       const document = {
         documentId: makeId('jd'),
         type: payload.type,
         fileName,
         mimeType: payload.mimeType || 'application/pdf',
         sizeBytes: Number(payload.sizeBytes) || 0,
+        storageKey: payload.storageKey || '',
         submittedAt: now,
         status: 'submitted',
         verifiedBy: '',
         remarks: payload.remarks || '',
+        version,
+        isCurrent: true,
         history: [
           {
             at: now,
-            action: 'Submitted',
-            by: 'Candidate',
+            action: version > 1 ? 'Resubmitted' : 'Submitted',
+            by: payload.by || 'Candidate',
             remarks: payload.remarks || 'Document submitted through the joining portal.',
           },
         ],
       };
 
-      const documents = [...(joining.documents || []), document];
+      documents.push(document);
 
       database.joinings = database.joinings.map((item) =>
         item.joiningId === joiningId ? { ...item, documents, updatedAt: now } : item
       );
-      upsertChecklistItem(database, joining, payload.type, 'submitted', payload.remarks || '');
+      const refreshedJoining = findRecord(
+        database.joinings,
+        (item) => item.joiningId === joiningId
+      );
+      CHECKLIST_KEYS_FOR_DOCUMENT(payload.type).forEach((key) => {
+        upsertChecklistItem(database, refreshedJoining, key, 'submitted', payload.remarks || '');
+      });
 
       appendActivity(database, {
         type: 'joining',
@@ -437,6 +481,11 @@ export const joiningService = {
       if (!target) {
         throw createServiceError('The document record could not be found.');
       }
+      if (target.isCurrent === false) {
+        throw createServiceError(
+          'This version was superseded by a newer submission. Verify the current version instead.'
+        );
+      }
       if (!target.submittedAt) {
         throw createServiceError('The document has not been submitted yet.');
       }
@@ -444,11 +493,77 @@ export const joiningService = {
       const status = verified ? 'verified' : 'resubmission_required';
       const documents = updateDocumentStatus(database, joining, documentId, status, remarks);
 
-      const checklistKey = CHECKLIST_KEYS_FOR_DOCUMENT(target.type);
-      if (checklistKey) {
+      // Keep the document-submission request in sync and, when a resubmission
+      // is requested, record the simulated notification email for the
+      // candidate.
+      const offerForRequest = findRecord(
+        database.offers,
+        (item) => item.offerId === joining.offerId
+      );
+      if (offerForRequest) {
+        let request = findRecord(
+          database.documentRequests,
+          (item) => item.offerId === offerForRequest.offerId
+        );
+        if (!request) {
+          request = ensureDocumentRequestForOffer(database, offerForRequest, { user: HR })
+            .request;
+        }
+        const liveJoining = findRecord(
+          database.joinings,
+          (item) => item.joiningId === joiningId
+        );
+        const currentDocs = (liveJoining.documents || []).filter(
+          (document) => document?.isCurrent !== false
+        );
+        const nextRequestStatus = deriveRequestStatus(
+          request.requiredDocuments,
+          currentDocs
+        );
+        if (nextRequestStatus !== request.status) {
+          database.documentRequests = database.documentRequests.map((item) =>
+            item.requestId === request.requestId
+              ? { ...item, status: nextRequestStatus, updatedAt: new Date().toISOString() }
+              : item
+          );
+        }
+
+        if (!verified) {
+          const candidate = findRecord(
+            database.candidates,
+            (item) => item.candidateId === joining.candidateId
+          );
+          const link = buildDocumentSubmissionUrl(request.token);
+          const { subject, body } = buildResubmissionEmail({
+            candidate,
+            documentLabel: getRequestDocumentLabel(target.type),
+            remarks,
+            link,
+          });
+          appendEmailEvent(database, {
+            type: 'resubmission',
+            applicationId: joining.applicationId,
+            candidateId: joining.candidateId,
+            offerId: offerForRequest.offerId,
+            joiningId: joining.joiningId,
+            to: candidate?.email || '',
+            subject,
+            body,
+            link,
+            status: 'simulated_sent',
+          });
+        }
+      }
+
+      const checklistKeys = CHECKLIST_KEYS_FOR_DOCUMENT(target.type);
+      const refreshedForChecklist = findRecord(
+        database.joinings,
+        (item) => item.joiningId === joiningId
+      );
+      for (const checklistKey of checklistKeys) {
         upsertChecklistItem(
           database,
-          joining,
+          refreshedForChecklist,
           checklistKey,
           verified ? 'verified' : 'rejected',
           remarks
@@ -940,22 +1055,12 @@ export const joiningService = {
   },
 };
 
+/**
+ * Maps a submitted document type to the joining checklist item(s) it backs.
+ * Single authoritative mapping shared with the checklist UI.
+ */
 function CHECKLIST_KEYS_FOR_DOCUMENT(documentType) {
-  const map = {
-    identity: 'identity',
-    address: 'address',
-    photograph: 'photograph',
-    degree: 'degree',
-    marksheets: 'marksheets',
-    professional_certificate: 'professional_certificate',
-    previous_employment: 'previous_employment',
-    experience_certificate: 'experience_certificate',
-    relieving_letter: 'relieving_letter',
-    bank: 'bank',
-    emergency_contact: 'emergency_contact',
-    employment_details: 'employment_details',
-  };
-  return map[documentType] || null;
+  return DOCUMENT_CHECKLIST_KEYS[documentType] || [];
 }
 
 export default joiningService;

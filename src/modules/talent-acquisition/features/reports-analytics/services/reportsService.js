@@ -221,11 +221,71 @@ export const reportsService = {
         : 0,
     };
 
+    const currentJoiningDocuments = joinings.flatMap((joining) =>
+      (Array.isArray(joining.documents) ? joining.documents : []).filter(
+        (document) => document?.isCurrent !== false
+      )
+    );
+    const documentsAwaitingVerification = currentJoiningDocuments.filter((document) =>
+      ['submitted', 'under_verification'].includes(document.status)
+    ).length;
+    const documentsResubmissionRequired = currentJoiningDocuments.filter(
+      (document) => document.status === 'resubmission_required'
+    ).length;
+    const documentsVerifiedCount = currentJoiningDocuments.filter(
+      (document) => document.status === 'verified'
+    ).length;
+    const documentsInScope = currentJoiningDocuments.filter(
+      (document) => document.status !== 'pending' || document.fileName
+    ).length;
+
+    // Document submission requests in the selected scope.
+    const scopedRequests = (database.documentRequests || []).filter((item) =>
+      applicationIds.has(item.applicationId)
+    );
+    const requestsSubmitted = scopedRequests.filter(
+      (item) => item.status === 'submitted'
+    ).length;
+    const requestsResubmission = scopedRequests.filter(
+      (item) => item.status === 'resubmission_required'
+    ).length;
+
+    // Mock email operations in the selected scope. These are simulated
+    // operations, not confirmed real-world deliveries.
+    const scopedEmails = (database.emailEvents || []).filter((item) =>
+      applicationIds.has(item.applicationId)
+    );
+    const emailActivity = {
+      total: scopedEmails.length,
+      offerLetters: scopedEmails.filter((item) => item.type === 'offer_letter').length,
+      documentRequests: scopedEmails.filter((item) => item.type === 'document_request')
+        .length,
+      resubmissions: scopedEmails.filter((item) => item.type === 'resubmission').length,
+      candidateResponses: {
+        accepted: acceptedOffers.length,
+        declined: offers.filter((item) => item.status === OFFER_STATUS.DECLINED).length,
+      },
+    };
+
+    const joiningPending = joinings.filter((item) => item.status !== JOINING_STATUS.JOINED)
+      .length;
+    const handedOver = joinings.filter(
+      (item) => item.handover?.status === 'imported'
+    ).length;
+
     const joiningStats = {
       total: joinings.length,
       pending: joinings.filter((item) => item.status === JOINING_STATUS.PENDING).length,
-      documentsPending: joinings.filter(
-        (item) => item.status === JOINING_STATUS.DOCUMENTS_PENDING
+      documentsPending: joinings.filter((item) =>
+        item.status === JOINING_STATUS.DOCUMENTS_PENDING ||
+        item.status === JOINING_STATUS.VERIFICATION_IN_PROGRESS ||
+        (Array.isArray(item.documents) &&
+          item.documents
+            .filter((document) => document?.isCurrent !== false)
+            .some((document) =>
+              ['pending', 'submitted', 'under_verification', 'resubmission_required'].includes(
+                document.status
+              )))
       ).length,
       verification: joinings.filter(
         (item) => item.status === JOINING_STATUS.VERIFICATION_IN_PROGRESS
@@ -233,7 +293,37 @@ export const reportsService = {
       readyToJoin: joinings.filter((item) => item.status === JOINING_STATUS.READY_TO_JOIN)
         .length,
       joined: joinings.filter((item) => item.status === JOINING_STATUS.JOINED).length,
-      handedOver: joinings.filter((item) => item.conversion?.status === 'handed_over').length,
+      handedOver,
+      completionRate: percentage(
+        joinings.filter((item) => item.status === JOINING_STATUS.JOINED).length,
+        joinings.length
+      ),
+      handoverRate: percentage(
+        handedOver,
+        joinings.filter((item) => item.status === JOINING_STATUS.JOINED).length
+      ),
+    };
+
+    const documentSubmissionStats = {
+      requests: scopedRequests.length,
+      requested: scopedRequests.filter((item) => item.status === 'requested').length,
+      submitted: requestsSubmitted,
+      resubmissionRequired: requestsResubmission,
+      submissionRate: percentage(requestsSubmitted, scopedRequests.length),
+    };
+
+    const documentVerificationStats = {
+      submitted: currentJoiningDocuments.filter((document) =>
+        document.submittedAt
+      ).length,
+      verified: documentsVerifiedCount,
+      awaitingVerification: documentsAwaitingVerification,
+      resubmissionRequired: documentsResubmissionRequired,
+      verificationRate: percentage(documentsVerifiedCount, documentsInScope || 0),
+      resubmissionRate: percentage(
+        documentsResubmissionRequired,
+        documentsVerifiedCount + documentsResubmissionRequired || 1
+      ),
     };
 
     return {
@@ -259,6 +349,18 @@ export const reportsService = {
       approvalStats,
       offerStats,
       joiningStats,
+      emailActivity,
+      documentSubmissionStats,
+      documentVerificationStats,
+      employeeConversionStats: {
+        handedOver,
+        joined: joinings.filter((item) => item.status === JOINING_STATUS.JOINED).length,
+        handoverRate: percentage(
+          handedOver,
+          joinings.filter((item) => item.status === JOINING_STATUS.JOINED).length
+        ),
+      },
+      joiningPending,
     };
   },
 };

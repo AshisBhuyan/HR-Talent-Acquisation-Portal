@@ -21,6 +21,8 @@ export default function JoiningSummaryCards({ summary }) {
     { key: 'joined', label: 'Successfully Joined', value: summary.joined, meta: 'Employees that joined', icon: UserCheck, variant: 'green' },
     { key: 'handover', label: 'Pending Employee Handover', value: summary.pendingHandover, meta: 'Joined, awaiting databank import', icon: ClipboardList, variant: 'orange' },
     { key: 'imported', label: 'Successfully Imported', value: summary.imported, meta: 'Current employees in the databank', icon: Send, variant: 'green' },
+    { key: 'awaiting', label: 'Documents Awaiting Verification', value: summary.documentsAwaitingVerification, meta: 'Submitted or under verification', icon: ShieldCheck, variant: 'blue' },
+    { key: 'resubmission', label: 'Resubmission Required', value: summary.resubmissionRequired, meta: 'Waiting for a replacement document', icon: FileText, variant: 'orange' },
   ];
 
   return (

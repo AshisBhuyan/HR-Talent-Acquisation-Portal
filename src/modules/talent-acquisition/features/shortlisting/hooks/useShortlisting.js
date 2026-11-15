@@ -66,7 +66,9 @@ export function useShortlisting() {
             nextInterview: scheduled || null,
           };
         })
-        .filter((entry) => entry.application && entry.application.status !== 'on_hold'),
+        // On-hold candidates stay visible: they belong to the On Hold view
+        // and must remain inspectable and resumable from this page.
+        .filter((entry) => entry.application),
     [shortlistings, applications, candidates, jobs, screenings, interviews]
   );
 
@@ -142,6 +144,7 @@ export function useShortlisting() {
     error,
     actions,
     runAction,
+    refresh,
   };
 }
 

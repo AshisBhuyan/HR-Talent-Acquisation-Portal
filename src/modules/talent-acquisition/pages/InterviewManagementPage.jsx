@@ -30,6 +30,7 @@ export default function InterviewManagementPage() {
     error,
     actions,
     runAction,
+    refresh,
   } = useInterviews();
 
   const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -137,7 +138,7 @@ export default function InterviewManagementPage() {
         subtitle="Schedule the interview rounds of the shortlisted candidates, track their status and record the interview feedback."
         actions={
           <>
-            <Button variant="outline" icon={RefreshCw} onClick={() => window.location.reload()}>
+            <Button variant="outline" icon={RefreshCw} onClick={() => refresh()}>
               Refresh data
             </Button>
             <Button

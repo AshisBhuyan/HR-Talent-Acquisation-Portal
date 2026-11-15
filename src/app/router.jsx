@@ -3,6 +3,8 @@ import MainLayout from '../shared/layout/MainLayout.jsx';
 import EmployeeOnboardingPage from '../modules/employee-databank/pages/EmployeeOnboardingPage.jsx';
 import { employeeDatabankRoutes } from '../modules/employee-databank/routes/employeeDatabankRoutes.jsx';
 import { talentAcquisitionRoutes } from '../modules/talent-acquisition/routes/talentAcquisitionRoutes.jsx';
+import CandidateOfferResponsePage from '../modules/talent-acquisition/pages/CandidateOfferResponsePage.jsx';
+import CandidateDocumentSubmissionPage from '../modules/talent-acquisition/pages/CandidateDocumentSubmissionPage.jsx';
 import { ROUTES } from './routeConfig.js';
 
 function NotFoundPage() {
@@ -40,6 +42,14 @@ export const router = createBrowserRouter([
   {
     path: ROUTES.INVITE_PATTERN,
     element: <EmployeeOnboardingPage />,
+  },
+  {
+    path: ROUTES.CANDIDATE_OFFER_RESPONSE_PATTERN,
+    element: <CandidateOfferResponsePage />,
+  },
+  {
+    path: ROUTES.CANDIDATE_DOCUMENT_SUBMISSION_PATTERN,
+    element: <CandidateDocumentSubmissionPage />,
   },
   {
     path: '*',

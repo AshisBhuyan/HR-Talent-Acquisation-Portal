@@ -1,4 +1,4 @@
-import { CalendarPlus, PauseCircle, UserCheck, XCircle } from 'lucide-react';
+import { CalendarPlus, PauseCircle, RotateCcw, UserCheck, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DataTable from '../../../../../shared/components/DataTable.jsx';
 import Badge from '../../../../../shared/components/Badge.jsx';
@@ -11,7 +11,7 @@ import { ROUTES } from '../../../../../app/routeConfig.js';
 /**
  * Shortlist table with the shortlisting actions.
  */
-export default function ShortlistTable({ rows, loading, onHold, onReject }) {
+export default function ShortlistTable({ rows, loading, onHold, onReject, onResume }) {
   const navigate = useNavigate();
 
   const columns = [
@@ -106,15 +106,28 @@ export default function ShortlistTable({ rows, loading, onHold, onReject }) {
           >
             <CalendarPlus size={16} />
           </button>
-          <button
-            type="button"
-            className="btn btn--ghost btn--icon"
-            onClick={() => onHold(row)}
-            aria-label={`Put ${row.candidate.fullName} on hold`}
-            title="Put on hold"
-          >
-            <PauseCircle size={16} />
-          </button>
+          {(row.shortlisting.status === 'on_hold' ||
+            row.application.status === 'on_hold') ? (
+            <button
+              type="button"
+              className="btn btn--ghost btn--icon"
+              onClick={() => onResume(row)}
+              aria-label={`Resume ${row.candidate.fullName}`}
+              title="Resume candidate"
+            >
+              <RotateCcw size={16} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="btn btn--ghost btn--icon"
+              onClick={() => onHold(row)}
+              aria-label={`Put ${row.candidate.fullName} on hold`}
+              title="Put on hold"
+            >
+              <PauseCircle size={16} />
+            </button>
+          )}
           <button
             type="button"
             className="btn btn--danger-ghost btn--icon"

@@ -26,6 +26,7 @@ export default function ShortlistingPage() {
     error,
     actions,
     runAction,
+    refresh,
   } = useShortlisting();
 
   const [action, setAction] = useState(null);
@@ -51,6 +52,9 @@ export default function ShortlistingPage() {
       if (action.mode === 'reject') {
         await runAction(actions.rejectShortlist, action.row.application.applicationId, { remarks });
         toast.success(`${action.row.candidate.fullName} was rejected.`);
+      } else if (action.mode === 'resume') {
+        await runAction(actions.resumeApplication, action.row.application.applicationId, { remarks });
+        toast.success(`${action.row.candidate.fullName} was resumed.`);
       } else {
         await runAction(actions.holdShortlist, action.row.application.applicationId, { remarks });
         toast.success(`${action.row.candidate.fullName} was put on hold.`);
@@ -70,7 +74,7 @@ export default function ShortlistingPage() {
         title="Shortlisting"
         subtitle="Candidates that completed the CV screening. Shortlist them, keep them on hold or close their application before the interview stage."
         actions={
-          <Button variant="outline" icon={RefreshCw} onClick={() => window.location.reload()}>
+          <Button variant="outline" icon={RefreshCw} onClick={() => refresh()}>
             Refresh data
           </Button>
         }
@@ -158,6 +162,7 @@ export default function ShortlistingPage() {
         loading={loading}
         onHold={(row) => setAction({ mode: 'hold', row })}
         onReject={(row) => setAction({ mode: 'reject', row })}
+        onResume={(row) => setAction({ mode: 'resume', row })}
       />
 
       {visibleEntries.length === 0 && !loading && (

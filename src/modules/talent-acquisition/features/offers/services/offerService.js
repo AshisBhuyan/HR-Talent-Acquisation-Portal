@@ -1,5 +1,6 @@
 import {
   appendActivity,
+  appendEmailEvent,
   createServiceError,
   delay,
   findRecord,
@@ -14,6 +15,11 @@ import {
   transitionApplication,
   assertApplicationNotOnHold,
 } from '../../candidate-applications/services/candidateApplicationService.js';
+import {
+  buildOfferLetterEmail,
+  buildOfferResponseUrl,
+} from '../../offer-emails/services/offerEmailService.js';
+import { ensureDocumentRequestForOffer } from '../../document-requests/services/documentRequestService.js';
 import { buildApplicationRow } from '../../../utils/formatCandidateData.js';
 
 /**
@@ -191,18 +197,69 @@ export const offerService = {
         throw createServiceError('Only a draft offer can be sent to the candidate.');
       }
 
+      const approval = findRecord(
+        database.approvals,
+        (item) => item.applicationId === offer.applicationId
+      );
+      if (!approval || approval.status !== APPROVAL_STATUS.APPROVED) {
+        throw createServiceError(
+          'An approved hiring recommendation is required before the offer can be sent.'
+        );
+      }
+
+      const candidate = findRecord(
+        database.candidates,
+        (item) => item.candidateId === offer.candidateId
+      );
+      const application = findRecord(
+        database.applications,
+        (item) => item.applicationId === offer.applicationId
+      );
+      const job = findRecord(database.jobs, (item) => item.jobId === application?.jobId);
+      if (!candidate || !application) {
+        throw createServiceError('The candidate or application behind the offer is missing.');
+      }
+      const recipient = String(candidate.email || '').trim();
+      if (!recipient) {
+        throw createServiceError(
+          'The candidate does not have an email address. Add one before sending the offer.',
+          { email: 'The candidate must have an email address.' }
+        );
+      }
+
+      // Reuse the response token issued by the migration, or mint one now.
+      const responseToken = offer.responseToken || makeId('resp');
+      const link = buildOfferResponseUrl(responseToken);
+
       const now = new Date().toISOString();
       const updated = {
         ...offer,
         status: OFFER_STATUS.SENT,
         sentAt: now,
+        responseToken,
         delivery: {
           channel: 'mock-email-queue',
-          confirmed: true,
-          confirmedAt: now,
-          note: 'Delivery recorded by the mock backend. No live email integration is connected.',
+          simulated: true,
+          delivered: false,
+          status: 'simulated_sent',
+          sentAt: now,
+          note: 'Simulated operation recorded by the mock backend. No live email integration is connected; no email was actually delivered.',
         },
       };
+
+      const { subject, body } = buildOfferLetterEmail({ candidate, job, offer: updated, link });
+      const email = appendEmailEvent(database, {
+        type: 'offer_letter',
+        applicationId: offer.applicationId,
+        candidateId: offer.candidateId,
+        offerId: offer.offerId,
+        to: recipient,
+        subject,
+        body,
+        link,
+        status: 'simulated_sent',
+      });
+      updated.emailId = email.id;
 
       database.offers = database.offers.map((item) =>
         item.offerId === offerId ? updated : item
@@ -212,13 +269,13 @@ export const offerService = {
         type: 'offer',
         applicationId: offer.applicationId,
         candidateId: offer.candidateId,
-        action: 'Offer sent',
+        action: 'Offer Sent (Simulated)',
         status: 'sent',
-        note: 'Offer letter handed over to the configured email integration',
-        message: `Offer sent to ${candidateName(database, offer)}`,
+        note: 'Offer email recorded as a simulated operation. No real email was delivered.',
+        message: `Offer sent (simulated) to ${candidate.fullName || 'candidate'}`,
       });
 
-      return updated;
+      return { ...updated, simulatedEmail: email };
     });
   },
 
@@ -252,6 +309,17 @@ export const offerService = {
         item.offerId === offerId ? updated : item
       );
 
+      // Acceptance automatically requests the joining documents. The
+      // helper is idempotent: a repeated acceptance never creates a second
+      // document request or a second email.
+      let documentRequest = null;
+      if (response === OFFER_STATUS.ACCEPTED) {
+        documentRequest = ensureDocumentRequestForOffer(database, updated, {
+          user: 'HR Administrator',
+          now,
+        }).request;
+      }
+
       appendActivity(database, {
         type: 'offer',
         applicationId: offer.applicationId,
@@ -262,7 +330,7 @@ export const offerService = {
         message: `Offer ${response} by ${candidateName(database, offer)}`,
       });
 
-      return updated;
+      return { ...updated, documentRequest };
     });
   },
 };

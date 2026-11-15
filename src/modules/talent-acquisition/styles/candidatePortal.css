@@ -1,0 +1,284 @@
+/* ---------------------------------------------------------------
+   Candidate-facing portal (standalone, no HR chrome)
+   Mirrors the Ecometrix design language of the Employee Databank
+   self-service onboarding page.
+--------------------------------------------------------------- */
+
+.cp-portal {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(900px 520px at 10% -5%, rgba(122, 180, 27, 0.16), transparent 60%),
+    radial-gradient(760px 440px at 95% 2%, rgba(255, 148, 18, 0.12), transparent 58%),
+    linear-gradient(rgba(122, 180, 27, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(122, 180, 27, 0.025) 1px, transparent 1px),
+    var(--color-page);
+  background-size: auto, auto, 34px 34px, 34px 34px, auto;
+}
+
+.cp-portal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.6rem;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(14px) saturate(1.3);
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.cp-portal__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.cp-portal__logo {
+  width: 142px;
+  height: 82px;
+}
+
+.cp-portal__brand-name {
+  font-size: 0.89rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-text-strong);
+}
+
+.cp-portal__brand-sub {
+  font-size: 0.71rem;
+  color: var(--color-text-muted);
+}
+
+.cp-portal__secure {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.73rem;
+  font-weight: 650;
+  color: var(--color-primary-darker);
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-primary-line);
+  border-radius: 999px;
+  padding: 0.32rem 0.72rem;
+}
+
+.cp-portal__main {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 2.2rem 1.25rem 3rem;
+  flex: 1;
+}
+
+.cp-portal__intro {
+  margin: 0 auto 1.5rem;
+  max-width: 720px;
+  text-align: center;
+}
+
+.cp-portal__eyebrow {
+  margin-bottom: 0.6rem;
+}
+
+.cp-portal__title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+  color: var(--color-text-strong);
+}
+
+.cp-portal__subtitle {
+  margin: 0.55rem auto 0;
+  max-width: 620px;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.cp-portal__card {
+  position: relative;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  padding: 1.6rem;
+  overflow: hidden;
+}
+
+.cp-portal__card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary), transparent 92%);
+}
+
+.cp-portal__footer {
+  margin: 1.6rem auto 0;
+  max-width: 680px;
+  text-align: center;
+  font-size: 0.73rem;
+  line-height: 1.6;
+  color: var(--color-text-subtle);
+}
+
+/* Document submission rows */
+.cp-doc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.cp-doc {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.9rem;
+  background: var(--color-surface);
+}
+
+.cp-doc--done {
+  border-color: var(--color-primary-line);
+  background: var(--color-primary-soft);
+}
+
+.cp-doc__icon {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+}
+
+.cp-doc--done .cp-doc__icon {
+  background: #ffffff;
+  color: var(--color-primary-darker);
+}
+
+.cp-doc__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.cp-doc__title {
+  font-weight: 650;
+  color: var(--color-text-strong);
+  font-size: 0.86rem;
+}
+
+.cp-doc__note {
+  font-size: 0.74rem;
+  color: var(--color-text-muted);
+  margin-top: 0.15rem;
+}
+
+.cp-doc__file {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: 0.35rem;
+  word-break: break-all;
+}
+
+.cp-doc__error {
+  font-size: 0.75rem;
+  color: var(--color-danger-dark, #b42318);
+  margin-top: 0.3rem;
+  font-weight: 600;
+}
+
+.cp-doc__actions {
+  display: flex;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.cp-progress {
+  margin: 0 0 1.2rem;
+}
+
+.cp-progress__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.4rem;
+}
+
+.cp-progress__label {
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: var(--color-text-strong);
+}
+
+.cp-progress__value {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.cp-progress__track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-surface-muted);
+  overflow: hidden;
+}
+
+.cp-progress__bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  transition: width 0.35s ease;
+}
+
+.cp-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.cp-portal__summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem 1.5rem;
+  margin-bottom: 1.2rem;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-md);
+  padding: 0.9rem 1rem;
+}
+
+@media (max-width: 640px) {
+  .cp-portal__summary {
+    grid-template-columns: 1fr;
+  }
+  .cp-doc {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .cp-doc__actions {
+    justify-content: flex-start;
+  }
+  .cp-portal__logo {
+    width: 120px;
+    height: 70px;
+  }
+}

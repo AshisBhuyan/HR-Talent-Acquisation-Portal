@@ -22,6 +22,7 @@ export default function DocumentVerification({
   const [expandedById, setExpandedById] = useState({});
 
   const documents = entry?.documents || [];
+  const supersededDocuments = entry?.supersededDocuments || [];
 
   const setReason = (documentId, value) =>
     setReasonById((current) => ({ ...current, [documentId]: value }));
@@ -45,6 +46,48 @@ export default function DocumentVerification({
 
   return (
     <ul className="ta-document-list">
+      {supersededDocuments.length > 0 && (
+        <details className="ta-document__history" style={{ marginBottom: '0.75rem' }}>
+          <summary>Previous versions ({supersededDocuments.length}) — audit trail</summary>
+          <ul className="ta-document-list" style={{ marginTop: '0.6rem' }}>
+            {supersededDocuments.map((document) => (
+              <li className="ta-document" key={document.documentId} style={{ opacity: 0.8 }}>
+                <span className="ta-document__icon">
+                  <FileText size={18} aria-hidden="true" />
+                </span>
+                <div className="ta-document__body">
+                  <div className="ta-document__name">
+                    {document.fileName} <span className="cell-muted">v{document.version || 1} · superseded</span>
+                  </div>
+                  <div className="ta-document__meta">
+                    <Badge variant="grey">{getDocumentTypeLabel(document.type)}</Badge>
+                    <span>{formatFileSize(document.sizeBytes)}</span>
+                    {document.submittedAt && <span>Submitted {formatDate(document.submittedAt)}</span>}
+                  </div>
+                  {Array.isArray(document.history) && document.history.length > 0 && (
+                    <ol className="ta-timeline" style={{ marginTop: '0.4rem' }}>
+                      {[...document.history].reverse().map((item, index) => (
+                        <li className="ta-timeline__item" key={`${item.at}-${index}`}>
+                          <span className="ta-timeline__dot" aria-hidden="true" />
+                          <div className="ta-timeline__body">
+                            <div className="ta-timeline__event">{item.action}</div>
+                            <div className="ta-timeline__meta">
+                              {formatDateTime(item.at)}
+                              {item.by ? ` · ${item.by}` : ''}
+                            </div>
+                            {item.remarks && <div className="ta-timeline__note">{item.remarks}</div>}
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
       {documents.map((document) => {
         const meta = getDocumentStatusMeta(document.status);
         const submitted = Boolean(document.submittedAt);
@@ -57,7 +100,8 @@ export default function DocumentVerification({
             </span>
             <div className="ta-document__body">
               <div className="ta-document__name">
-                {document.fileName || 'Awaiting document'}
+                {document.fileName || 'Awaiting document'}{' '}
+                <span className="cell-muted">v{document.version || 1}</span>
               </div>
               <div className="ta-document__meta">
                 <Badge variant="blue">{getDocumentTypeLabel(document.type)}</Badge>

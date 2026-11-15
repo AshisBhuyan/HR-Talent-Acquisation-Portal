@@ -19,6 +19,8 @@ export { default as RecruitmentPipeline } from './components/RecruitmentPipeline
 export { default as CandidateStatusBadge } from './components/CandidateStatusBadge.jsx';
 export { default as TalentAcquisitionEmptyState } from './components/EmptyState.jsx';
 export { default as candidateApplicationService } from './features/candidate-applications/services/candidateApplicationService.js';
+export { default as documentRequestService } from './features/document-requests/services/documentRequestService.js';
+export { default as offerEmailService } from './features/offer-emails/services/offerEmailService.js';
 export { default as screeningService } from './features/cv-screening/services/screeningService.js';
 export { default as shortlistingService } from './features/shortlisting/services/shortlistingService.js';
 export { default as interviewService } from './features/interviews/services/interviewService.js';
@@ -32,6 +34,10 @@ export {
   getHandoverReadiness,
 } from './services/candidateToEmployeeService.js';
 export { APPLICATION_STATUS } from './constants/applicationStatus.js';
+export {
+  DOCUMENT_REQUEST_STATUS,
+  DEFAULT_REQUIRED_DOCUMENTS,
+} from './constants/documentRequestRules.js';
 export { SCREENING_STATUS } from './constants/screeningStatus.js';
 export { INTERVIEW_STATUS } from './constants/interviewStatus.js';
 export { SELECTION_STATUS } from './constants/selectionStatus.js';

@@ -22,6 +22,7 @@ export default function ApprovalManagementPage() {
     error,
     actions,
     runAction,
+    refresh,
   } = useApprovals();
 
   const [reviewEntry, setReviewEntry] = useState(null);
@@ -66,7 +67,7 @@ export default function ApprovalManagementPage() {
         title="Admin Approval"
         subtitle="Hiring recommendations submitted by HR. Approve, reject or request a clarification for every recommendation and keep the approval history for audit."
         actions={
-          <Button variant="outline" icon={RefreshCw} onClick={() => window.location.reload()}>
+          <Button variant="outline" icon={RefreshCw} onClick={() => refresh()}>
             Refresh data
           </Button>
         }

@@ -65,7 +65,21 @@ export default function OfferTable({
     {
       key: 'status',
       header: 'Status',
-      render: (row) => <CandidateStatusBadge status={row.offer.status} kind="offer" />,
+      render: (row) => (
+        <div>
+          <CandidateStatusBadge status={row.offer.status} kind="offer" />
+          {row.offer.sentAt && (
+            <div className="cell-muted" style={{ marginTop: '0.25rem' }}>
+              Simulated email sent {formatDate(row.offer.sentAt)}
+            </div>
+          )}
+          {row.offer.respondedAt && (
+            <div className="cell-muted">
+              Candidate responded {formatDate(row.offer.respondedAt)}
+            </div>
+          )}
+        </div>
+      ),
     },
     {
       key: 'actions',

@@ -359,12 +359,59 @@ button.ta-pipeline__button:hover {
   gap: 0.85rem;
 }
 
-.ta-summary__item,
-.ta-metric {
+.ta-summary__item {
   padding: 0.85rem 0.95rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface-muted);
+}
+
+/* KPI tiles — matches the shared Ecometrix stat-card used by the dashboard
+   and joining screens (surface, accent bar, label/value type). */
+.ta-metric {
+  --stat-accent: var(--color-primary);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  padding: 1.1rem 1.15rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(252, 253, 250, 0.98)),
+    var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+  transition:
+    transform var(--transition-base),
+    box-shadow var(--transition-base),
+    border-color var(--transition-base);
+}
+
+.ta-metric::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--stat-accent), transparent 75%);
+}
+
+.ta-metric::after {
+  content: '';
+  position: absolute;
+  right: -24px;
+  top: -30px;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: var(--stat-accent);
+  opacity: 0.06;
+}
+
+.ta-metric:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-sm);
 }
 
 .ta-summary__label,
@@ -376,8 +423,13 @@ button.ta-pipeline__button:hover {
   color: var(--color-text-muted);
 }
 
-.ta-summary__value,
-.ta-metric__value {
+.ta-metric__label {
+  position: relative;
+  z-index: 1;
+  letter-spacing: 0.045em;
+}
+
+.ta-summary__value {
   margin-top: 0.28rem;
   font-size: 1.32rem;
   font-weight: 800;
@@ -386,9 +438,24 @@ button.ta-pipeline__button:hover {
   font-variant-numeric: tabular-nums;
 }
 
+.ta-metric__value {
+  position: relative;
+  z-index: 1;
+  margin-top: 0.28rem;
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.18;
+  color: var(--color-text-strong);
+  font-variant-numeric: tabular-nums;
+}
+
 .ta-metric__meta {
+  position: relative;
+  z-index: 1;
   margin-top: 0.15rem;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
+  line-height: 1.4;
   color: var(--color-text-subtle);
 }
 

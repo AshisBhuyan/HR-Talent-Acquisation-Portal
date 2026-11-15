@@ -27,6 +27,8 @@ const EMPTY_STATE = {
   offers: [],
   joinings: [],
   activities: [],
+  emailEvents: [],
+  documentRequests: [],
   loading: true,
   error: '',
 };
@@ -57,6 +59,8 @@ export function TalentAcquisitionProvider({ children }) {
         offers: database.offers,
         joinings: database.joinings,
         activities: database.activities,
+        emailEvents: database.emailEvents,
+        documentRequests: database.documentRequests,
         loading: false,
         error: '',
       });
@@ -171,6 +175,46 @@ export function TalentAcquisitionProvider({ children }) {
         new Date(interview.scheduledAt).getTime() >= now
     );
 
+    const currentDocuments = state.joinings.flatMap((joining) =>
+      (joining.documents || []).filter((document) => document?.isCurrent !== false)
+    );
+    const documentsAwaitingVerification = currentDocuments.filter((document) =>
+      ['submitted', 'under_verification'].includes(document.status)
+    ).length;
+    const documentsResubmissionRequired = currentDocuments.filter(
+      (document) => document.status === 'resubmission_required'
+    ).length;
+
+    const approvedAwaitingOffer = state.applications.filter((application) => {
+      if (application.status !== APPLICATION_STATUS.APPROVAL) return false;
+      const approval = state.approvals.find(
+        (item) => item.applicationId === application.applicationId
+      );
+      const offer = state.offers.find(
+        (item) => item.applicationId === application.applicationId
+      );
+      return approval?.status === APPROVAL_STATUS.APPROVED && !offer;
+    }).length;
+
+    const offersAwaitingResponse = state.offers.filter(
+      (offer) => offer.status === OFFER_STATUS.SENT
+    ).length;
+    const acceptedAwaitingDocuments = state.documentRequests.filter(
+      (request) => request.status === 'requested' || request.status === 'resubmission_required'
+    ).length;
+    const joiningPending = state.joinings.filter(
+      (joining) => joining.status !== 'joined'
+    ).length;
+    const employeesHandedOver = state.joinings.filter(
+      (joining) => joining.handover?.status === 'imported'
+    ).length;
+    const pendingApprovals = state.approvals.filter(
+      (approval) => approval.status === APPROVAL_STATUS.PENDING
+    ).length;
+    const readyToJoin = state.joinings.filter(
+      (joining) => joining.status === 'ready_to_join'
+    ).length;
+
     return {
       totalApplications: state.applications.length,
       newApplications: state.applications.filter(
@@ -186,12 +230,26 @@ export function TalentAcquisitionProvider({ children }) {
       selected: state.applications.filter(
         (item) => item.status === APPLICATION_STATUS.SELECTED
       ).length,
-      pendingApprovals: state.approvals.filter(
-        (approval) => approval.status === APPROVAL_STATUS.PENDING
-      ).length,
+      pendingApprovals,
       offersSent: state.offers.filter((offer) => offer.status !== OFFER_STATUS.DRAFT).length,
+      approvedAwaitingOffer,
+      offersAwaitingResponse,
+      acceptedAwaitingDocuments,
+      documentsAwaitingVerification,
+      documentsResubmissionRequired,
+      joiningPending,
+      employeesHandedOver,
+      hrPendingActions:
+        pendingApprovals + documentsAwaitingVerification + readyToJoin,
     };
-  }, [state.applications, state.interviews, state.approvals, state.offers]);
+  }, [
+    state.applications,
+    state.interviews,
+    state.approvals,
+    state.offers,
+    state.joinings,
+    state.documentRequests,
+  ]);
 
   const value = useMemo(
     () => ({ ...state, stats, actions, refresh }),

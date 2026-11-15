@@ -103,6 +103,7 @@ export function useCandidateApplications() {
     resetFilters,
     runAction,
     actions,
+    refresh,
   };
 }
 

@@ -112,6 +112,7 @@ export function useApprovals() {
     error,
     actions,
     runAction,
+    refresh,
   };
 }
 

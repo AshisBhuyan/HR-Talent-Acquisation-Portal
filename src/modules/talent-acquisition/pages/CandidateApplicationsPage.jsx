@@ -39,6 +39,7 @@ export default function CandidateApplicationsPage() {
     resetFilters,
     runAction,
     actions,
+    refresh,
   } = useCandidateApplications();
 
   const [detailRow, setDetailRow] = useState(null);
@@ -179,7 +180,7 @@ export default function CandidateApplicationsPage() {
         title="Candidate Applications"
         subtitle="All applications received from the Career Portal. Search, filter and progress the candidates that match an open position."
         actions={
-          <Button variant="outline" icon={RefreshCw} onClick={() => window.location.reload()}>
+          <Button variant="outline" icon={RefreshCw} onClick={() => refresh()}>
             Refresh data
           </Button>
         }

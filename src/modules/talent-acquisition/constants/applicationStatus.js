@@ -81,7 +81,12 @@ export const APPLICATION_TRANSITIONS = {
   // An on-hold application changes only through the Resume action, which
   // restores the status it held before it was placed on hold.
   [APPLICATION_STATUS.ON_HOLD]: [],
-  [APPLICATION_STATUS.REJECTED]: [],
+  // Rejected at the approval stage can return to APPROVAL exclusively
+  // through the approval resubmission workflow (resubmitForApproval), which
+  // validates that a resubmission is pending. Permanent rejections from
+  // earlier stages never produced an approval record and are never
+  // restored by this edge.
+  [APPLICATION_STATUS.REJECTED]: [APPLICATION_STATUS.APPROVAL],
   [APPLICATION_STATUS.SELECTED]: [],
 };
 

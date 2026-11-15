@@ -156,6 +156,7 @@ export function useInterviews() {
     error,
     actions,
     runAction,
+    refresh,
   };
 }
 

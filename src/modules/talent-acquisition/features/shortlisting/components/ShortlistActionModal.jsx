@@ -4,7 +4,7 @@ import Button from '../../../../../shared/components/Button.jsx';
 import { Textarea } from '../../../../../shared/components/Input.jsx';
 
 /**
- * Collects the remark for a shortlisting action (hold or reject).
+ * Collects the remark for a shortlisting action (hold, resume or reject).
  */
 export default function ShortlistActionModal({
   open,
@@ -25,6 +25,39 @@ export default function ShortlistActionModal({
   }, [open]);
 
   const isReject = mode === 'reject';
+  const copy = {
+    reject: {
+      title: 'Reject candidate',
+      label: 'Reason for rejection',
+      required: true,
+      placeholder: 'Describe why the candidate is not progressing',
+      confirm: 'Reject candidate',
+      variant: 'danger',
+    },
+    resume: {
+      title: 'Resume candidate',
+      label: 'Reason for the resume',
+      required: false,
+      placeholder: 'Explain why the candidate is back in the running',
+      confirm: 'Resume candidate',
+      variant: 'primary',
+    },
+    hold: {
+      title: 'Put candidate on hold',
+      label: 'Reason for the hold',
+      required: false,
+      placeholder: 'Explain what is blocking the shortlist',
+      confirm: 'Put on hold',
+      variant: 'primary',
+    },
+  }[mode] || {
+    title: 'Put candidate on hold',
+    label: 'Reason for the hold',
+    required: false,
+    placeholder: 'Explain what is blocking the shortlist',
+    confirm: 'Put on hold',
+    variant: 'primary',
+  };
 
   const handleConfirm = () => {
     if (isReject && !remarks.trim()) {
@@ -38,7 +71,7 @@ export default function ShortlistActionModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={isReject ? 'Reject candidate' : 'Put candidate on hold'}
+      title={copy.title}
       subtitle={row ? `${row.candidate.fullName} · ${row.job.title}` : ''}
       size="sm"
       footer={
@@ -47,29 +80,25 @@ export default function ShortlistActionModal({
             Cancel
           </Button>
           <Button
-            variant={isReject ? 'danger' : 'primary'}
+            variant={copy.variant}
             onClick={handleConfirm}
             loading={loading}
           >
-            {isReject ? 'Reject candidate' : 'Put on hold'}
+            {copy.confirm}
           </Button>
         </>
       }
     >
       <Textarea
-        label={isReject ? 'Reason for rejection' : 'Reason for the hold'}
-        required={isReject}
+        label={copy.label}
+        required={copy.required}
         error={error}
         value={remarks}
         onChange={(event) => {
           setRemarks(event.target.value);
           if (error) setError('');
         }}
-        placeholder={
-          isReject
-            ? 'Describe why the candidate is not progressing'
-            : 'Explain what is blocking the shortlist'
-        }
+        placeholder={copy.placeholder}
       />
     </Modal>
   );

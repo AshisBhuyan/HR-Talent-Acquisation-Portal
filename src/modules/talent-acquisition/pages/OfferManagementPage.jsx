@@ -25,10 +25,12 @@ export default function OfferManagementPage() {
     error,
     actions,
     runAction,
+    refresh,
   } = useOffers();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editEntry, setEditEntry] = useState(null);
+  const [preselectId, setPreselectId] = useState('');
   const [previewEntry, setPreviewEntry] = useState(null);
   const [sendEntry, setSendEntry] = useState(null);
   const [responseEntry, setResponseEntry] = useState(null);
@@ -59,7 +61,7 @@ export default function OfferManagementPage() {
     try {
       await runAction(actions.sendOffer, sendEntry.offer.offerId);
       toast.success(
-        `The offer was handed over to the configured email integration for ${sendEntry.candidate.fullName}.`
+        `The offer email for ${sendEntry.candidate.fullName} was recorded as a simulated operation. No real email was delivered. The candidate can respond using the personal link in the email.`
       );
       setSendEntry(null);
     } catch (actionError) {
@@ -90,16 +92,17 @@ export default function OfferManagementPage() {
       <PageHeader
         eyebrow="Ecometrix · Talent Acquisition"
         title="Offer Management"
-        subtitle="Create the offer of an approved candidate, dispatch it through the configured integration and track the response of the candidate."
+        subtitle="Create the offer of an approved candidate, dispatch it via a simulated email operation and track the candidate's response."
         actions={
           <>
-            <Button variant="outline" icon={RefreshCw} onClick={() => window.location.reload()}>
+            <Button variant="outline" icon={RefreshCw} onClick={() => refresh()}>
               Refresh data
             </Button>
             <Button
               icon={Plus}
               onClick={() => {
                 setEditEntry(null);
+                setPreselectId('');
                 setFormOpen(true);
               }}
             >
@@ -113,6 +116,45 @@ export default function OfferManagementPage() {
         <div className="notice notice--error" role="alert">
           <div className="notice__body">{error}</div>
         </div>
+      )}
+
+      {eligibleApplications.length > 0 && (
+        <section className="card">
+          <div className="card__header">
+            <div>
+              <div className="card__title">Approved – Awaiting HR Offer</div>
+              <div className="card__subtitle">
+                These candidates were approved by the administrator and are waiting for you to
+                prepare their offer. Approval does not create an offer automatically.
+              </div>
+            </div>
+          </div>
+          <div className="card__body">
+            <ul className="ta-list">
+              {eligibleApplications.map((entry) => (
+                <li className="ta-list__item" key={entry.application.applicationId}>
+                  <div className="ta-list__body">
+                    <div className="ta-list__title">{entry.candidate.fullName}</div>
+                    <div className="ta-list__meta">
+                      {entry.job.title} · {entry.application.applicationId}
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setEditEntry(null);
+                      setPreselectId(entry.application.applicationId);
+                      setFormOpen(true);
+                    }}
+                  >
+                    Prepare offer
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
       )}
 
       <div className="ta-interview-summary">
@@ -204,10 +246,12 @@ export default function OfferManagementPage() {
         open={formOpen}
         offer={editEntry?.offer}
         eligibleApplications={eligibleApplications}
+        initialApplicationId={preselectId}
         loading={busy}
         onClose={() => {
           setFormOpen(false);
           setEditEntry(null);
+          setPreselectId('');
         }}
         onSubmit={handleSubmit}
       />
@@ -221,12 +265,12 @@ export default function OfferManagementPage() {
       <ConfirmDialog
         open={Boolean(sendEntry)}
         title="Send offer letter"
-        confirmLabel="Send offer"
+        confirmLabel="Send offer (simulated)"
         variant="primary"
         message={
           sendEntry
-            ? `The offer of ${sendEntry.candidate.fullName} will be handed over to the configured email integration. The delivery is recorded by the backend integration.`
-            : 'The offer will be handed over to the configured email integration.'
+            ? `A simulated offer email for ${sendEntry.candidate.fullName} will be recorded in the mock email log, including the candidate's personal response link. No real email is delivered.`
+            : 'A simulated offer email will be recorded.'
         }
         onClose={() => setSendEntry(null)}
         onConfirm={handleSend}

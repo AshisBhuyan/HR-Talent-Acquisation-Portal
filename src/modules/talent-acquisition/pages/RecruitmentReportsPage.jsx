@@ -6,6 +6,10 @@ import ReportFilters from '../features/reports-analytics/components/ReportFilter
 import FunnelChart from '../features/reports-analytics/components/FunnelChart.jsx';
 import PositionTable from '../features/reports-analytics/components/PositionTable.jsx';
 import useRecruitmentReports from '../features/reports-analytics/hooks/useRecruitmentReports.js';
+import {
+  exportReportToExcel,
+  exportReportToPdf,
+} from '../features/reports-analytics/services/reportExportService.js';
 import { useTalentAcquisition } from '../context/TalentAcquisitionContext.jsx';
 import { recruitmentMetricsMockData } from '../data/recruitmentMetricsMockData.js';
 import '../styles/recruitmentReports.css';
@@ -38,42 +42,27 @@ export default function RecruitmentReportsPage() {
 
   const [exporting, setExporting] = useState(false);
 
-  const handleExport = () => {
+  const handleExportExcel = () => {
     if (!report) return;
 
     setExporting(true);
     try {
-      const header = [
-        'Position',
-        'Department',
-        'Openings',
-        'Applications',
-        'Shortlisted',
-        'Selected',
-      ];
-      const rows = report.byPosition.map((row) => [
-        row.title,
-        row.department,
-        row.openings,
-        row.applications,
-        row.shortlisted,
-        row.selected,
-      ]);
+      exportReportToExcel(report);
+      toast.success('The recruitment report was exported as an Excel workbook.');
+    } catch (exportError) {
+      toast.error(exportError.message);
+    } finally {
+      setExporting(false);
+    }
+  };
 
-      const csv = [header, ...rows]
-        .map((row) => row.map((cell) => `"${String(cell ?? '')}"`).join(','))
-        .join('\n');
+  const handleExportPdf = () => {
+    if (!report) return;
 
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `ecometrix-recruitment-report-${
-        new Date().toISOString().slice(0, 10)
-      }.csv`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      toast.success('The recruitment report was exported.');
+    setExporting(true);
+    try {
+      exportReportToPdf(report);
+      toast.success('The print dialog opened. Choose "Save as PDF" to export the report.');
     } catch (exportError) {
       toast.error(exportError.message);
     } finally {
@@ -117,7 +106,8 @@ export default function RecruitmentReportsPage() {
         loading={loading || exporting}
         onChange={updateFilter}
         onReset={resetFilters}
-        onExport={handleExport}
+        onExportExcel={handleExportExcel}
+        onExportPdf={handleExportPdf}
       />
 
       {loading && !report ? (
@@ -360,7 +350,136 @@ export default function RecruitmentReportsPage() {
                       { label: 'Verification', value: report.joiningStats.verification },
                       { label: 'Ready to join', value: report.joiningStats.readyToJoin },
                       { label: 'Joined', value: report.joiningStats.joined },
+                      {
+                        label: 'Joining completion rate',
+                        value: `${report.joiningStats.completionRate}%`,
+                      },
                       { label: 'Handed over', value: report.joiningStats.handedOver },
+                      {
+                        label: 'Handover rate',
+                        value: `${report.joiningStats.handoverRate}%`,
+                      },
+                    ]}
+                  />
+                </div>
+              </section>
+            </div>
+
+            <div className="ta-dashboard-grid">
+              <section className="card">
+                <div className="card__header">
+                  <div>
+                    <div className="card__title">Document submission report</div>
+                    <div className="card__subtitle">Requests sent after offer acceptance</div>
+                  </div>
+                </div>
+                <div className="card__body">
+                  <StatRow
+                    items={[
+                      { label: 'Requests created', value: report.documentSubmissionStats.requests },
+                      { label: 'Awaiting submission', value: report.documentSubmissionStats.requested },
+                      { label: 'Submitted', value: report.documentSubmissionStats.submitted },
+                      {
+                        label: 'Resubmission required',
+                        value: report.documentSubmissionStats.resubmissionRequired,
+                      },
+                      {
+                        label: 'Submission rate',
+                        value: `${report.documentSubmissionStats.submissionRate}%`,
+                      },
+                    ]}
+                  />
+                </div>
+              </section>
+
+              <section className="card">
+                <div className="card__header">
+                  <div>
+                    <div className="card__title">Document verification report</div>
+                    <div className="card__subtitle">HR verification outcomes (current versions)</div>
+                  </div>
+                </div>
+                <div className="card__body">
+                  <StatRow
+                    items={[
+                      {
+                        label: 'Documents submitted',
+                        value: report.documentVerificationStats.submitted,
+                      },
+                      { label: 'Verified', value: report.documentVerificationStats.verified },
+                      {
+                        label: 'Awaiting verification',
+                        value: report.documentVerificationStats.awaitingVerification,
+                      },
+                      {
+                        label: 'Resubmission required',
+                        value: report.documentVerificationStats.resubmissionRequired,
+                      },
+                      {
+                        label: 'Verification rate',
+                        value: `${report.documentVerificationStats.verificationRate}%`,
+                      },
+                      {
+                        label: 'Resubmission rate',
+                        value: `${report.documentVerificationStats.resubmissionRate}%`,
+                      },
+                    ]}
+                  />
+                </div>
+              </section>
+            </div>
+
+            <div className="ta-dashboard-grid">
+              <section className="card">
+                <div className="card__header">
+                  <div>
+                    <div className="card__title">Email activity report</div>
+                    <div className="card__subtitle">
+                      Simulated operations — nothing is delivered to real inboxes
+                    </div>
+                  </div>
+                </div>
+                <div className="card__body">
+                  <StatRow
+                    items={[
+                      { label: 'Simulated emails', value: report.emailActivity.total },
+                      { label: 'Offer letters', value: report.emailActivity.offerLetters },
+                      { label: 'Document requests', value: report.emailActivity.documentRequests },
+                      { label: 'Resubmission notices', value: report.emailActivity.resubmissions },
+                      {
+                        label: 'Candidate acceptances',
+                        value: report.emailActivity.candidateResponses.accepted,
+                      },
+                      {
+                        label: 'Candidate declines',
+                        value: report.emailActivity.candidateResponses.declined,
+                      },
+                    ]}
+                  />
+                </div>
+              </section>
+
+              <section className="card">
+                <div className="card__header">
+                  <div>
+                    <div className="card__title">Employee conversion report</div>
+                    <div className="card__subtitle">
+                      Joined candidates converted into the Employee Databank
+                    </div>
+                  </div>
+                </div>
+                <div className="card__body">
+                  <StatRow
+                    items={[
+                      { label: 'Joined', value: report.employeeConversionStats.joined },
+                      {
+                        label: 'Handed over',
+                        value: report.employeeConversionStats.handedOver,
+                      },
+                      {
+                        label: 'Successful handover rate',
+                        value: `${report.employeeConversionStats.handoverRate}%`,
+                      },
                     ]}
                   />
                 </div>

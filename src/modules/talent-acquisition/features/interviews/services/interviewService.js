@@ -272,7 +272,7 @@ export const interviewService = {  async getInterviews() {
       const updated = {
         ...interview,
         status: INTERVIEW_STATUS.CANCELLED,
-        notes: remarks ? `${interview.notes ? `${interview.notes} Ã‚Â· ` : ''}${remarks}` : interview.notes,
+        notes: remarks ? `${interview.notes ? `${interview.notes} · ` : ''}${remarks}` : interview.notes,
         cancelledAt: new Date().toISOString(),
       };
 

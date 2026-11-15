@@ -158,8 +158,13 @@ export const approvalService = {
           (item) => item.applicationId === applicationId
         )
       );
-      if (approval.status !== APPROVAL_STATUS.REJECTED) {
-        throw createServiceError('Only a rejected recommendation can be resubmitted.');
+      if (
+        approval.status !== APPROVAL_STATUS.REJECTED &&
+        approval.status !== APPROVAL_STATUS.CLARIFICATION_REQUESTED
+      ) {
+        throw createServiceError(
+          'Only a rejected or clarification-requested recommendation can be resubmitted.'
+        );
       }
 
       const now = new Date().toISOString();
@@ -185,6 +190,36 @@ export const approvalService = {
       database.approvals = database.approvals.map((item) =>
         item.applicationId === applicationId ? updated : item
       );
+
+      // A rejection at the approval stage moved the application to REJECTED.
+      // Resubmitting the recommendation must return the application to the
+      // pending-approval state so a fresh approval decision can be recorded
+      // and the candidate can reach the offer workflow again. The previous
+      // decision and its timestamps are preserved on the approval history;
+      // permanently rejected applications from earlier stages have no
+      // approval record and are never touched here.
+      const application = findRecord(
+        database.applications,
+        (item) => item.applicationId === applicationId
+      );
+      if (application?.status === APPLICATION_STATUS.REJECTED) {
+        transitionApplication(database, applicationId, APPLICATION_STATUS.APPROVAL, {
+          remarks,
+          note: 'Recommendation resubmitted for approval',
+          event: 'Resubmitted for Approval',
+          at: now,
+        });
+        appendActivity(database, {
+          type: 'approval',
+          applicationId,
+          candidateId: approval.candidateId,
+          action: 'Resubmitted for Approval',
+          previousStatus: APPLICATION_STATUS.REJECTED,
+          status: APPLICATION_STATUS.APPROVAL,
+          note: remarks || 'Recommendation resubmitted for approval',
+          message: 'Application returned to the approval stage after resubmission',
+        });
+      }
 
       return updated;
     });
