@@ -1,4 +1,21 @@
 import { INTERVIEW_MODES, INTERVIEW_ROUNDS } from '../../../constants/interviewStatus.js';
+import { normalizeEmail } from '../utils/interviewers.js';
+
+function isHttpUrl(value = '') {
+  try {
+    const url = new URL(String(value).trim());
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function getInterviewerDrafts(values = {}) {
+  if (Array.isArray(values.interviewers) && values.interviewers.length > 0) {
+    return values.interviewers;
+  }
+  return [{ name: values.interviewer || '', email: '' }];
+}
 
 /**
  * Validation for the interview scheduling form. The rules mirror the service
@@ -17,9 +34,34 @@ export function validateInterviewForm(values = {}) {
     errors.round = 'Select a valid interview round.';
   }
 
-  if (!values.interviewer?.trim()) {
-    errors.interviewer = 'Enter the interviewer name.';
+  const interviewers = getInterviewerDrafts(values);
+  if (interviewers.length === 0) {
+    errors.interviewers = 'Add at least one interviewer.';
   }
+
+  const emails = new Map();
+  interviewers.forEach((interviewer, index) => {
+    if (!interviewer?.name?.trim()) {
+      errors[`interviewers.${index}.name`] = 'Enter the interviewer name.';
+    }
+    if (!interviewer?.email?.trim()) {
+      errors[`interviewers.${index}.email`] = 'Enter the interviewer email address.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(interviewer.email.trim())) {
+      errors[`interviewers.${index}.email`] = 'Enter a valid email address.';
+    } else {
+      const key = normalizeEmail(interviewer.email);
+      if (!emails.has(key)) emails.set(key, []);
+      emails.get(key).push(index);
+    }
+  });
+
+  emails.forEach((indexes) => {
+    if (indexes.length < 2) return;
+    indexes.forEach((index) => {
+      errors[`interviewers.${index}.email`] =
+        'This email is used by another interviewer.';
+    });
+  });
 
   if (!values.scheduledDate) {
     errors.scheduledDate = 'Select the interview date.';
@@ -44,8 +86,12 @@ export function validateInterviewForm(values = {}) {
     errors.mode = 'Select a valid interview mode.';
   }
 
-  if (values.mode === 'online' && !values.meetingLink?.trim()) {
-    errors.meetingLink = 'Add the meeting link for an online interview.';
+  if (values.mode === 'online') {
+    if (!values.meetingLink?.trim()) {
+      errors.meetingLink = 'Add the meeting link for an online interview.';
+    } else if (!isHttpUrl(values.meetingLink)) {
+      errors.meetingLink = 'Enter a valid http(s) meeting link.';
+    }
   }
 
   if (values.mode === 'offline' && !values.location?.trim()) {
@@ -90,14 +136,26 @@ export function validateFeedbackForm(values = {}) {
 }
 
 export function buildInterviewPayload(values = {}) {
+  const interviewers = getInterviewerDrafts(values)
+    .map((interviewer, index) => ({
+      ...(interviewer?.id ? { id: interviewer.id } : { id: `draft-${index + 1}` }),
+      name: String(interviewer?.name || '').trim(),
+      email: String(interviewer?.email || '').trim(),
+    }))
+    .filter((interviewer) => interviewer.name || interviewer.email);
+
   return {
     applicationId: values.applicationId,
     round: values.round,
-    interviewer: values.interviewer,
+    interviewer: interviewers
+      .map((interviewer) => interviewer.name)
+      .filter(Boolean)
+      .join(', '),
+    interviewers,
     scheduledAt: `${values.scheduledDate}T${values.scheduledTime}`,
     mode: values.mode,
-    meetingLink: values.meetingLink,
-    location: values.location,
+    meetingLink: values.mode === 'online' ? values.meetingLink : '',
+    location: values.mode === 'offline' ? values.location : '',
     notes: values.notes,
   };
 }

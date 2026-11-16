@@ -28,6 +28,55 @@ export const INTERVIEW_MODES = [
   { value: 'offline', label: 'Offline' },
 ];
 
+export const INTERVIEW_TYPE = {
+  INDIVIDUAL: 'individual',
+  MULTIPLE: 'multiple',
+  PANEL: 'panel',
+};
+
+export const INTERVIEW_TYPE_META = {
+  [INTERVIEW_TYPE.INDIVIDUAL]: { label: 'Individual Interview', variant: 'blue' },
+  [INTERVIEW_TYPE.MULTIPLE]: { label: 'Multiple Interviewers', variant: 'purple' },
+  [INTERVIEW_TYPE.PANEL]: { label: 'Panel Interview', variant: 'orange' },
+};
+
+export const INTERVIEWER_NOTIFICATION_STATUS = {
+  PENDING: 'pending',
+  SENT: 'sent',
+  FAILED: 'failed',
+  SKIPPED: 'skipped',
+};
+
+export const INTERVIEWER_NOTIFICATION_STATUS_META = {
+  [INTERVIEWER_NOTIFICATION_STATUS.PENDING]: { label: 'Pending', variant: 'orange' },
+  [INTERVIEWER_NOTIFICATION_STATUS.SENT]: { label: 'Sent', variant: 'green' },
+  [INTERVIEWER_NOTIFICATION_STATUS.FAILED]: { label: 'Failed', variant: 'red' },
+  [INTERVIEWER_NOTIFICATION_STATUS.SKIPPED]: { label: 'No email', variant: 'grey' },
+};
+
+/**
+ * The interview type is derived from the number of assigned interviewers and
+ * is never entered by hand: 1 interviewer is individual, 2-3 is a multiple
+ * interviewer round and more than 3 is a panel.
+ */
+export function getInterviewType(count = 0) {
+  const total = Number(count) || 0;
+  if (total > 3) return INTERVIEW_TYPE.PANEL;
+  if (total > 1) return INTERVIEW_TYPE.MULTIPLE;
+  return INTERVIEW_TYPE.INDIVIDUAL;
+}
+
+export function getInterviewTypeMeta(count = 0) {
+  return INTERVIEW_TYPE_META[getInterviewType(count)] || INTERVIEW_TYPE_META[INTERVIEW_TYPE.INDIVIDUAL];
+}
+
+export function getInterviewerNotificationStatusMeta(status) {
+  return (
+    INTERVIEWER_NOTIFICATION_STATUS_META[status] ||
+    INTERVIEWER_NOTIFICATION_STATUS_META[INTERVIEWER_NOTIFICATION_STATUS.SKIPPED]
+  );
+}
+
 export const INTERVIEW_RECOMMENDATIONS = [
   { value: 'recommended', label: 'Recommended' },
   { value: 'not_recommended', label: 'Not Recommended' },

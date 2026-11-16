@@ -2,6 +2,11 @@ import { CalendarClock } from 'lucide-react';
 import EmptyState from '../../../components/EmptyState.jsx';
 import { formatDate, formatTimeOfDay } from '../../../utils/formatDate.js';
 import { getRoundLabel } from '../../../constants/interviewStatus.js';
+import {
+  getInterviewerCount,
+  getInterviewerSummary,
+  getInterviewerTypeMeta,
+} from '../utils/interviewers.js';
 
 /**
  * Interview agenda for the upcoming rounds, grouped by calendar day.
@@ -48,7 +53,12 @@ export default function InterviewCalendar({ interviews, candidates }) {
                     {getRoundLabel(entry.interview.round)}
                   </div>
                   <div className="ta-calendar__meta">
-                    {entry.interview.interviewer} ·{' '}
+                    {getInterviewerSummary(entry.interview)} ·{' '}
+                    {getInterviewerTypeMeta(entry.interview).label}
+                    {getInterviewerCount(entry.interview) > 0
+                      ? ` (${getInterviewerCount(entry.interview)})`
+                      : ''}{' '}
+                    ·{' '}
                     {entry.interview.mode === 'online' ? 'Online' : entry.interview.location}
                   </div>
                 </div>

@@ -7,7 +7,7 @@ import {
   mutateDatabase,
   readDatabase,
 } from '../../../services/mockBackend.js';
-import { INTERVIEW_STATUS } from '../../../constants/interviewStatus.js';
+import { INTERVIEW_STATUS, getInterviewType, getRoundLabel } from '../../../constants/interviewStatus.js';
 import {
   APPLICATION_STATUS,
   canTransitionApplication,
@@ -18,6 +18,15 @@ import {
 } from '../../candidate-applications/services/candidateApplicationService.js';
 import { buildApplicationRow } from '../../../utils/formatCandidateData.js';
 import interviewEmailService from './interviewEmailService.js';
+import interviewerNotificationService, {
+  deliverInterviewerNotifications,
+} from './interviewerNotificationService.js';
+import {
+  mergeInterviewerEntries,
+  normalizeEmail,
+  normalizeInterviewers,
+  splitLegacyInterviewerNames,
+} from '../utils/interviewers.js';
 
 function applicationStatus(database, applicationId) {
   const application = findRecord(
@@ -33,6 +42,65 @@ function assertInterviewApplicationNotOnHold(database, interview) {
     (item) => item.applicationId === interview.applicationId
   );
   assertApplicationNotOnHold(application);
+}
+
+function buildInterviewerList(payload = {}) {
+  const incoming = Array.isArray(payload.interviewers) ? payload.interviewers : [];
+  const list = incoming
+    .map((item) => ({
+      id: item?.id,
+      name: String(item?.name || '').trim(),
+      email: String(item?.email || '').trim(),
+    }))
+    .filter((item) => item.name || item.email);
+
+  if (list.length > 0) return list;
+  return splitLegacyInterviewerNames(payload.interviewer).map((name) => ({
+    name,
+    email: '',
+  }));
+}
+
+function assertValidInterviewers(list = []) {
+  if (list.length === 0 || !list.some((item) => item.name)) {
+    throw createServiceError('Add at least one interviewer to the interview.', {
+      interviewers: 'Add at least one interviewer.',
+    });
+  }
+  if (list.some((item) => !item.name)) {
+    throw createServiceError('Every interviewer needs a name.', {
+      interviewers: 'Enter the name of every interviewer.',
+    });
+  }
+
+  const seen = new Set();
+  list.forEach((item) => {
+    const email = normalizeEmail(item.email);
+    if (!email) return;
+    if (seen.has(email)) {
+      throw createServiceError(
+        'Each interviewer must have a unique email address.',
+        { interviewers: 'Duplicate interviewer email addresses are not allowed.' }
+      );
+    }
+    seen.add(email);
+  });
+}
+
+function assertRoundAvailable(database, applicationId, round, excludeInterviewId) {
+  const existing = database.interviews.find(
+    (item) =>
+      item.applicationId === applicationId &&
+      item.round === round &&
+      item.status !== INTERVIEW_STATUS.CANCELLED &&
+      item.interviewId !== excludeInterviewId
+  );
+
+  if (existing) {
+    throw createServiceError(
+      `The ${getRoundLabel(round).toLowerCase()} is already scheduled for this candidate.`
+    );
+  }
 }
 
 export const interviewService = {  async getInterviews() {
@@ -92,14 +160,34 @@ export const interviewService = {  async getInterviews() {
         });
       }
 
+      const round = payload.round || 'hr';
+      assertRoundAvailable(database, application.applicationId, round);
+
+      const incomingInterviewers = buildInterviewerList(payload);
+      assertValidInterviewers(incomingInterviewers);
+
       const now = new Date().toISOString();
+      const interviewId = makeId('int');
+      const interviewers = mergeInterviewerEntries(
+        incomingInterviewers,
+        [],
+        interviewId
+      );
+      const interviewerNames = interviewers
+        .map((interviewer) => interviewer.name)
+        .filter(Boolean)
+        .join(', ');
+
       const record = {
-        interviewId: makeId('int'),
+        interviewId,
         applicationId: application.applicationId,
         candidateId: application.candidateId,
         jobId: application.jobId,
-        round: payload.round || 'hr',
-        interviewer: payload.interviewer?.trim() || '',
+        round,
+        interviewer: interviewerNames,
+        interviewers,
+        interviewerCount: interviewers.length,
+        interviewType: getInterviewType(interviewers.length),
         scheduledAt: scheduledAt.toISOString(),
         mode: payload.mode || 'online',
         meetingLink: payload.mode === 'online' ? payload.meetingLink?.trim() || '' : '',
@@ -112,9 +200,16 @@ export const interviewService = {  async getInterviews() {
 
       database.interviews.push(record);
 
+      // Interviewers are notified automatically after the schedule is saved.
+      // A failed notification never rolls back the interview; it can be
+      // retried from the interview details dialog.
+      deliverInterviewerNotifications(database, record, {
+        user: payload.user || 'HR Administrator',
+      });
+
       if (application.status === APPLICATION_STATUS.SHORTLISTED) {
         transitionApplication(database, application.applicationId, APPLICATION_STATUS.INTERVIEW, {
-          note: `${record.round} round scheduled with ${record.interviewer}`,
+          note: `${record.round} round scheduled with ${interviewerNames}`,
           at: now,
         });
       }
@@ -133,7 +228,7 @@ export const interviewService = {  async getInterviews() {
           application.status === APPLICATION_STATUS.SHORTLISTED
             ? APPLICATION_STATUS.INTERVIEW
             : application.status,
-        note: `${record.round} round scheduled with ${record.interviewer}`,
+        note: `${record.round} round scheduled with ${interviewerNames}`,
         message: `${record.round} round scheduled for ${candidate?.fullName || 'candidate'}`,
       });
 
@@ -165,10 +260,43 @@ export const interviewService = {  async getInterviews() {
         });
       }
 
+      const round = payload.round || interview.round;
+      if (round !== interview.round) {
+        assertRoundAvailable(
+          database,
+          interview.applicationId,
+          round,
+          interview.interviewId
+        );
+      }
+
+      const postedInterviewers =
+        Array.isArray(payload.interviewers) || typeof payload.interviewer === 'string';
+      const previousInterviewers = normalizeInterviewers(interview);
+      const incomingInterviewers = postedInterviewers
+        ? buildInterviewerList(payload)
+        : previousInterviewers;
+      assertValidInterviewers(incomingInterviewers);
+
+      const interviewers = postedInterviewers
+        ? mergeInterviewerEntries(
+            incomingInterviewers,
+            previousInterviewers,
+            interview.interviewId
+          )
+        : previousInterviewers;
+      const interviewerNames = interviewers
+        .map((interviewer) => interviewer.name)
+        .filter(Boolean)
+        .join(', ');
+
       const updated = {
         ...interview,
-        round: payload.round || interview.round,
-        interviewer: payload.interviewer?.trim() || interview.interviewer,
+        round,
+        interviewer: interviewerNames,
+        interviewers,
+        interviewerCount: interviewers.length,
+        interviewType: getInterviewType(interviewers.length),
         scheduledAt: scheduledAt.toISOString(),
         mode: payload.mode || interview.mode,
         meetingLink:
@@ -186,6 +314,12 @@ export const interviewService = {  async getInterviews() {
       database.interviews = database.interviews.map((item) =>
         item.interviewId === interviewId ? updated : item
       );
+
+      // Notify interviewers added by the edit (already-sent recipients keep
+      // their status and are never notified twice).
+      deliverInterviewerNotifications(database, updated, {
+        user: payload.user || 'HR Administrator',
+      });
 
       return updated;
     });
@@ -214,8 +348,43 @@ export const interviewService = {  async getInterviews() {
       }
 
       const now = new Date().toISOString();
+      const round = payload.round || interview.round;
+      if (round !== interview.round) {
+        assertRoundAvailable(
+          database,
+          interview.applicationId,
+          round,
+          interview.interviewId
+        );
+      }
+
+      const postedInterviewers =
+        Array.isArray(payload.interviewers) || typeof payload.interviewer === 'string';
+      const previousInterviewers = normalizeInterviewers(interview);
+      const incomingInterviewers = postedInterviewers
+        ? buildInterviewerList(payload)
+        : previousInterviewers;
+      assertValidInterviewers(incomingInterviewers);
+
+      const interviewers = postedInterviewers
+        ? mergeInterviewerEntries(
+            incomingInterviewers,
+            previousInterviewers,
+            interview.interviewId
+          )
+        : previousInterviewers;
+      const interviewerNames = interviewers
+        .map((interviewer) => interviewer.name)
+        .filter(Boolean)
+        .join(', ');
+
       const updated = {
         ...interview,
+        round,
+        interviewer: interviewerNames,
+        interviewers,
+        interviewerCount: interviewers.length,
+        interviewType: getInterviewType(interviewers.length),
         scheduledAt: scheduledAt.toISOString(),
         mode: payload.mode || interview.mode,
         meetingLink:
@@ -234,6 +403,10 @@ export const interviewService = {  async getInterviews() {
       database.interviews = database.interviews.map((item) =>
         item.interviewId === interviewId ? updated : item
       );
+
+      deliverInterviewerNotifications(database, updated, {
+        user: payload.user || 'HR Administrator',
+      });
 
       const candidate = findRecord(
         database.candidates,
@@ -287,6 +460,14 @@ export const interviewService = {  async getInterviews() {
   async sendInterviewInvitation(interviewId) {
     await delay(320);
     return interviewEmailService.sendInterviewInvitation(interviewId);
+  },
+
+  async retryInterviewerNotifications(interviewId, interviewerId) {
+    await delay(320);
+    return interviewerNotificationService.retryInterviewerNotifications(
+      interviewId,
+      interviewerId
+    );
   },
 
   async submitFeedback(interviewId, feedback = {}) {

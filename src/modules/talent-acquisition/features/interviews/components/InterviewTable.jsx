@@ -4,7 +4,12 @@ import Badge from '../../../../../shared/components/Badge.jsx';
 import EmptyState from '../../../components/EmptyState.jsx';
 import { formatDateTime, formatRelativeDay } from '../../../utils/formatDate.js';
 import { getInitials } from '../../../utils/formatCandidateData.js';
-import { getRoundLabel } from '../../../constants/interviewStatus.js';
+import {
+  getInterviewStatusMeta,
+  getInterviewTypeMeta,
+  getRoundLabel,
+} from '../../../constants/interviewStatus.js';
+import { normalizeInterviewers } from '../utils/interviewers.js';
 
 /**
  * Interview records table with the schedule, edit and feedback actions.
@@ -38,9 +43,30 @@ export default function InterviewTable({
       render: (row) => getRoundLabel(row.interview.round),
     },
     {
-      key: 'interviewer',
-      header: 'Interviewer',
-      render: (row) => row.interview.interviewer,
+      key: 'interviewers',
+      header: 'Interviewers',
+      render: (row) => {
+        const interviewers = normalizeInterviewers(row.interview);
+        const names = interviewers
+          .map((interviewer) => interviewer.name)
+          .filter(Boolean);
+        const typeMeta = getInterviewTypeMeta(names.length);
+        const display =
+          names.length > 2
+            ? `${names.slice(0, 2).join(', ')} +${names.length - 2} more`
+            : names.join(', ');
+        return (
+          <div>
+            <div className="cell-strong">
+              {display || row.interview.interviewer || 'Not assigned'}
+            </div>
+            <div className="cell-muted">
+              {typeMeta.label} · {names.length} interviewer
+              {names.length === 1 ? '' : 's'}
+            </div>
+          </div>
+        );
+      },
     },
     {
       key: 'scheduledAt',
@@ -51,6 +77,18 @@ export default function InterviewTable({
           <div className="cell-muted">{formatRelativeDay(row.interview.scheduledAt)}</div>
         </div>
       ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (row) => {
+        const statusMeta = getInterviewStatusMeta(row.interview.status);
+        return (
+          <Badge variant={statusMeta.variant} dot>
+            {statusMeta.label}
+          </Badge>
+        );
+      },
     },
     {
       key: 'mode',

@@ -119,6 +119,11 @@ export function TalentAcquisitionProvider({ children }) {
         interviewService.submitFeedback(interviewId, payload),
       sendInterviewInvitation: (interviewId) =>
         interviewService.sendInterviewInvitation(interviewId),
+      retryInterviewerNotifications: (interviewId, interviewerId) =>
+        interviewService.retryInterviewerNotifications(
+          interviewId,
+          interviewerId
+        ),
 
       // Final selection
       recordSelectionDecision: (applicationId, payload) =>

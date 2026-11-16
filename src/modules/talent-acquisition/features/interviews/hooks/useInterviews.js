@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useTalentAcquisition } from '../../../context/TalentAcquisitionContext.jsx';
 import { buildApplicationRow } from '../../../utils/formatCandidateData.js';
 import { INTERVIEW_STATUS } from '../../../constants/interviewStatus.js';
+import { getInterviewerNames } from '../utils/interviewers.js';
 
 /**
  * Interview management hook. Interviews are grouped into the upcoming,
@@ -53,7 +54,8 @@ export function useInterviews() {
       entries
         .filter(
           (entry) =>
-            entry.interview.status === INTERVIEW_STATUS.SCHEDULED &&
+            (entry.interview.status === INTERVIEW_STATUS.SCHEDULED ||
+              entry.interview.status === INTERVIEW_STATUS.RESCHEDULED) &&
             new Date(entry.interview.scheduledAt).getTime() >= now
         )
         .sort(
@@ -96,7 +98,7 @@ export function useInterviews() {
       if (!needle) return true;
       return (
         entry.candidate.fullName.toLowerCase().includes(needle) ||
-        entry.interview.interviewer.toLowerCase().includes(needle) ||
+        getInterviewerNames(entry.interview).toLowerCase().includes(needle) ||
         entry.job.title.toLowerCase().includes(needle)
       );
     });
@@ -121,7 +123,11 @@ export function useInterviews() {
   const shortlistableApplications = useMemo(
     () =>
       applications
-        .filter((application) => application.status === 'shortlisted')
+        .filter(
+          (application) =>
+            application.status === 'shortlisted' ||
+            application.status === 'interview'
+        )
         .map((application) => ({
           application,
           candidate: candidates.find((item) => item.candidateId === application.candidateId),

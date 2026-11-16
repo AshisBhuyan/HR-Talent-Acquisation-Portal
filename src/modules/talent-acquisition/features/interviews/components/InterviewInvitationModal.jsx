@@ -14,23 +14,47 @@ import {
   INTERVIEW_INVITATION_STATUS,
   INTERVIEW_INVITATION_STATUS_META,
 } from '../services/interviewEmailService.js';
-import { getRoundLabel } from '../../../constants/interviewStatus.js';
+import {
+  getInterviewTypeMeta,
+  getInterviewerNotificationStatusMeta,
+  getRoundLabel,
+  INTERVIEWER_NOTIFICATION_STATUS,
+} from '../../../constants/interviewStatus.js';
+import { normalizeInterviewers } from '../utils/interviewers.js';
 
 /**
- * Interview details and the manual interview invitation email. The email is
- * sent only when an HR user clicks "Send Interview Invitation". Nothing is
- * sent after scheduling, editing or rescheduling.
+ * Interview details, the interviewer notification log and the manual
+ * interview invitation email. The invitation is sent only when an HR user
+ * clicks "Send Interview Invitation"; interviewer notifications are generated
+ * automatically after scheduling and can be retried when they fail.
  */
-export default function InterviewInvitationModal({ open, entry, onClose, loading, onSend }) {
+export default function InterviewInvitationModal({
+  open,
+  entry,
+  onClose,
+  loading,
+  onSend,
+  onRetryInterviewer,
+}) {
   const [confirmSend, setConfirmSend] = useState(false);
+  const [retryingId, setRetryingId] = useState(null);
 
   useEffect(() => {
-    if (!open) setConfirmSend(false);
+    if (!open) {
+      setConfirmSend(false);
+      setRetryingId(null);
+    }
   }, [open]);
 
   if (!entry) return null;
 
   const { interview, application, candidate, job } = entry;
+  const interviewers = normalizeInterviewers(interview);
+  const interviewerNames = interviewers
+    .map((interviewer) => interviewer.name)
+    .filter(Boolean)
+    .join(', ');
+  const typeMeta = getInterviewTypeMeta(interviewers.length);
   const invitation = interview.invitation || null;
   const status = invitation?.status || INTERVIEW_INVITATION_STATUS.NOT_SENT;
   const statusMeta =
@@ -41,7 +65,7 @@ export default function InterviewInvitationModal({ open, entry, onClose, loading
     candidate,
     job,
     interview,
-    interviewer: interview.interviewer || 'HR Recruitment Team',
+    interviewer: interviewerNames || 'HR Recruitment Team',
   });
 
   const recipient = candidate.email || 'No personal email on file';
@@ -53,6 +77,16 @@ export default function InterviewInvitationModal({ open, entry, onClose, loading
   const handleConfirm = async () => {
     setConfirmSend(false);
     await onSend(interview.interviewId);
+  };
+
+  const handleRetryInterviewer = async (interviewerId) => {
+    if (!onRetryInterviewer) return;
+    setRetryingId(interviewerId);
+    try {
+      await onRetryInterviewer(interviewerId);
+    } finally {
+      setRetryingId(null);
+    }
   };
 
   const history = Array.isArray(invitation?.history) ? invitation.history : [];
@@ -67,7 +101,8 @@ export default function InterviewInvitationModal({ open, entry, onClose, loading
       footer={
         <>
           <span className="modal__footer-note">
-            Email delivery currently runs in mock mode. No real email will be delivered.
+            Interviewer notifications and the candidate invitation run in mock
+            mode. No real email will be delivered.
           </span>
           <Button variant="outline" onClick={onClose} disabled={loading}>
             Close
@@ -118,8 +153,14 @@ export default function InterviewInvitationModal({ open, entry, onClose, loading
             <div className="detail-item__value">{modeLabel}</div>
           </div>
           <div className="detail-item">
-            <div className="detail-item__label">Interviewer</div>
-            <div className="detail-item__value">{interview.interviewer || '—'}</div>
+            <div className="detail-item__label">Interview type</div>
+            <div className="detail-item__value">
+              <Badge variant={typeMeta.variant}>{typeMeta.label}</Badge>
+            </div>
+          </div>
+          <div className="detail-item">
+            <div className="detail-item__label">Interviewers</div>
+            <div className="detail-item__value">{interviewerNames || '—'}</div>
           </div>
           <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
             <div className="detail-item__label">
@@ -133,6 +174,80 @@ export default function InterviewInvitationModal({ open, entry, onClose, loading
           </div>
         </div>
       </section>
+
+      <div className="ta-panel" style={{ marginTop: '1.25rem' }}>
+        <div className="ta-panel__header">
+          Interviewer notifications
+          <span className="ta-simulated-tag">Simulated</span>
+        </div>
+        {interviewers.length === 0 ? (
+          <p className="cell-muted" style={{ margin: '0.75rem 1rem' }}>
+            No interviewer is assigned to this round.
+          </p>
+        ) : (
+          <ul className="ta-interviewer-notifications">
+            {interviewers.map((interviewer) => {
+              const notificationMeta = getInterviewerNotificationStatusMeta(
+                interviewer.notificationStatus
+              );
+              const canRetry =
+                Boolean(interviewer.email) &&
+                (interviewer.notificationStatus ===
+                  INTERVIEWER_NOTIFICATION_STATUS.FAILED ||
+                  interviewer.notificationStatus ===
+                    INTERVIEWER_NOTIFICATION_STATUS.PENDING);
+
+              return (
+                <li
+                  className="ta-interviewer-notifications__item"
+                  key={interviewer.id}
+                >
+                  <div className="ta-interviewer-notifications__person">
+                    <div className="cell-strong">
+                      {interviewer.name || 'Interviewer'}
+                    </div>
+                    <div className="cell-muted">
+                      {interviewer.email || 'No email address'}
+                    </div>
+                    {interviewer.error && (
+                      <div className="cell-muted">{interviewer.error}</div>
+                    )}
+                    <div className="cell-muted">
+                      {interviewer.attempts || 0} attempt
+                      {interviewer.attempts === 1 ? '' : 's'} recorded
+                      {interviewer.sentAt
+                        ? ` · ${formatDateTime(interviewer.sentAt)}`
+                        : ''}
+                    </div>
+                  </div>
+                  <div className="ta-interviewer-notifications__actions">
+                    <Badge variant={notificationMeta.variant} dot>
+                      {notificationMeta.label}
+                    </Badge>
+                    {canRetry && onRetryInterviewer && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        icon={RotateCw}
+                        onClick={() => handleRetryInterviewer(interviewer.id)}
+                        loading={retryingId === interviewer.id}
+                        disabled={loading}
+                      >
+                        Retry
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        <p className="cell-muted" style={{ margin: '0.6rem 1rem 0.9rem' }}>
+          Interviewers are notified automatically when the interview is
+          scheduled. Delivery is simulated in this demo and already-sent
+          notifications are never sent twice.
+        </p>
+      </div>
 
       <div className="ta-panel" style={{ marginTop: '1.25rem' }}>
         <div className="ta-panel__header">Send invitation email</div>

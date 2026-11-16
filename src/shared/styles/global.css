@@ -185,11 +185,22 @@ img {
 }
 
 .sidebar__logo-frame {
-  width: 176px;
-  height: 102px;
+  width: 150px;
+  max-width: 82%;
+  height: 78px;
+}
+
+.sidebar__logo-frame img {
+  position: static;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  transform: none;
 }
 
 .sidebar__brand-copy {
+  width: 100%;
   text-align: center;
 }
 
@@ -198,6 +209,12 @@ img {
   font-size: 0.87rem;
   line-height: 1.25;
   color: var(--color-text);
+}
+
+.sidebar__brand-name--talent {
+  font-size: 0.93rem;
+  line-height: 1.3;
+  letter-spacing: 0.005em;
 }
 
 .sidebar__brand-sub {

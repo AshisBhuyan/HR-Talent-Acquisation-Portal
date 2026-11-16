@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   BadgeCheck,
   Briefcase,
@@ -34,14 +34,24 @@ function NavItem({ to, icon: Icon, label, end = false, onNavigate }) {
 export default function Sidebar({ open, onNavigate }) {
   const [databankOpen, setDatabankOpen] = useState(true);
   const [talentOpen, setTalentOpen] = useState(true);
+  const { pathname } = useLocation();
+  const isTalentPortal = pathname.startsWith(ROUTES.TALENT_ACQUISITION);
 
   return (
     <aside className={`sidebar ${open ? 'open' : ''}`} aria-label="Main navigation">
       <div className="sidebar__brand">
         <EcometrixLogo className="sidebar__logo-frame" />
         <div className="sidebar__brand-copy">
-          <div className="sidebar__brand-name">Employee CV Management</div>
-          <div className="sidebar__brand-sub">Ecometrix HR Portal</div>
+          {isTalentPortal ? (
+            <div className="sidebar__brand-name sidebar__brand-name--talent">
+              HR Talent Acquisition Portal
+            </div>
+          ) : (
+            <>
+              <div className="sidebar__brand-name">Employee CV Management</div>
+              <div className="sidebar__brand-sub">Ecometrix HR Portal</div>
+            </>
+          )}
         </div>
       </div>
 

@@ -16,6 +16,7 @@ import '../styles/interviews.css';
 export default function InterviewManagementPage() {
   const toast = useToast();
   const {
+    entries,
     upcoming,
     completed,
     cancelled,
@@ -38,20 +39,45 @@ export default function InterviewManagementPage() {
   const [scheduleMode, setScheduleMode] = useState('create');
   const [feedbackEntry, setFeedbackEntry] = useState(null);
   const [cancelEntry, setCancelEntry] = useState(null);
-  const [inviteEntry, setInviteEntry] = useState(null);
+  const [inviteEntryId, setInviteEntryId] = useState(null);
   const [busy, setBusy] = useState(false);
 
   const { candidates } = useTalentAcquisition();
+
+  const inviteEntry =
+    entries.find(
+      (entry) => entry.interview.interviewId === inviteEntryId
+    ) || null;
 
   const handleSchedule = async (payload, interviewId) => {
     setBusy(true);
     try {
       if (interviewId) {
-        await runAction(actions.updateInterview, interviewId, payload);
-        toast.success('The interview was updated.');
+        const updated = await runAction(actions.updateInterview, interviewId, payload);
+        const failed = updated?.interviewers?.filter(
+          (interviewer) => interviewer.notificationStatus === 'failed'
+        ).length;
+        if (failed) {
+          toast.warning(
+            `The interview was updated, but ${failed} interviewer notification(s) failed. Open the interview details to retry.`
+          );
+        } else {
+          toast.success('The interview was updated.');
+        }
       } else {
-        await runAction(actions.scheduleInterview, payload);
-        toast.success('The interview was scheduled.');
+        const scheduled = await runAction(actions.scheduleInterview, payload);
+        const failed = scheduled?.interviewers?.filter(
+          (interviewer) => interviewer.notificationStatus === 'failed'
+        ).length;
+        if (failed) {
+          toast.warning(
+            `The interview was scheduled, but ${failed} interviewer notification(s) failed. Open the interview details to retry.`
+          );
+        } else {
+          toast.success(
+            'The interview was scheduled and interviewer notifications were recorded (simulated).'
+          );
+        }
       }
       setScheduleOpen(false);
       setScheduleEntry(null);
@@ -88,6 +114,27 @@ export default function InterviewManagementPage() {
         // Keep the modal open so the notification history is visible.
       } else {
         setInviteEntry(null);
+      }
+    } catch (actionError) {
+      toast.error(actionError.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleRetryInterviewer = async (interviewerId) => {
+    if (!inviteEntry) return;
+    setBusy(true);
+    try {
+      const result = await runAction(
+        actions.retryInterviewerNotifications,
+        inviteEntry.interview.interviewId,
+        interviewerId
+      );
+      if (result?.failed) {
+        toast.error('The interviewer notification could not be sent. Check the email address.');
+      } else {
+        toast.success('The interviewer notification was recorded (simulated).');
       }
     } catch (actionError) {
       toast.error(actionError.message);
@@ -212,8 +259,7 @@ export default function InterviewManagementPage() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Search by candidate or interviewer"
-                  aria-label="Search interview records"
-                />
+                  aria-label="Search interview records"                />
               </div>
               <div className="filters">
                 <button
@@ -222,6 +268,13 @@ export default function InterviewManagementPage() {
                   onClick={() => setStatusFilter('scheduled')}
                 >
                   Scheduled <span className="ta-filter-chip__count">{counts.scheduled}</span>
+                </button>
+                <button
+                  type="button"
+                  className={`ta-filter-chip ${statusFilter === 'rescheduled' ? 'active' : ''}`}
+                  onClick={() => setStatusFilter('rescheduled')}
+                >
+                  Rescheduled <span className="ta-filter-chip__count">{counts.rescheduled}</span>
                 </button>
                 <button
                   type="button"
@@ -262,7 +315,7 @@ export default function InterviewManagementPage() {
               }}
               onCancel={setCancelEntry}
               onFeedback={setFeedbackEntry}
-              onInvite={setInviteEntry}
+              onInvite={(row) => setInviteEntryId(row.interview.interviewId)}
             />
           </div>
         </section>
@@ -273,6 +326,7 @@ export default function InterviewManagementPage() {
         interview={scheduleEntry?.interview}
         mode={scheduleMode}
         candidates={shortlistableApplications}
+        interviews={entries.map((entry) => entry.interview)}
         loading={busy}
         onClose={() => {
           setScheduleOpen(false);
@@ -287,8 +341,9 @@ export default function InterviewManagementPage() {
         open={Boolean(inviteEntry)}
         entry={inviteEntry}
         loading={busy}
-        onClose={() => setInviteEntry(null)}
+        onClose={() => setInviteEntryId(null)}
         onSend={handleInvite}
+        onRetryInterviewer={handleRetryInterviewer}
       />
 
       <InterviewFeedbackModal

@@ -173,3 +173,111 @@
   max-height: 320px;
   overflow-y: auto;
 }
+
+/* Interviewer assignment --------------------------------------- */
+.ta-interviewer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.ta-interviewer-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ta-interviewer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.ta-interviewer-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 0.6rem;
+  align-items: start;
+}
+
+.ta-interviewer-row .field {
+  margin: 0;
+}
+
+.ta-interviewer-row__remove {
+  margin-top: 1.55rem;
+}
+
+.ta-interviewer-type {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.ta-interviewer-type .field__hint {
+  margin-top: 0;
+}
+
+.ta-interviewer-notifications {
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem 1rem 0.4rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.ta-interviewer-notifications__item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.ta-interviewer-notifications__item:last-child {
+  border-bottom: none;
+}
+
+.ta-interviewer-notifications__person {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.ta-interviewer-notifications__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.ta-simulated-tag {
+  margin-left: 0.45rem;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 720px) {
+  .ta-interviewer-row {
+    grid-template-columns: 1fr;
+  }
+
+  .ta-interviewer-row__remove {
+    margin-top: 0;
+    justify-self: end;
+  }
+
+  .ta-interviewer-notifications__item {
+    flex-direction: column;
+  }
+}
